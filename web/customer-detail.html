@@ -1,0 +1,231 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="theme-color" content="#00897b" />
+    <link rel="manifest" href="manifest.json" />
+    <link rel="apple-touch-icon" href="icons/icon-192.png" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-title" content="Pharmacy ERP" />
+    <title>Pharmacy ERP — Customer</title>
+    <link
+      rel="stylesheet"
+      href="vendor/css/materialize.min.css"
+    />
+    <link rel="stylesheet" href="vendor/css/fonts-local.css" />
+    <link rel="stylesheet" href="css/inventory.css" />
+  </head>
+  <body class="inv-app-body">
+    <div id="layout-root"></div>
+    <div id="page-fragment">
+      <div class="inv-main-column">
+        <div class="inv-customer-detail-head">
+          <a href="customers.html" class="inv-back-link btn-flat waves-effect">
+            <i class="material-icons left">arrow_back</i>Customers
+          </a>
+          <div class="inv-panel-head" style="margin-bottom: 0">
+            <div class="inv-panel-head-text">
+              <h1 class="inv-panel-title" id="cd-customer-name">—</h1>
+              <p class="inv-panel-subtitle" id="cd-customer-sub">—</p>
+            </div>
+            <div class="inv-panel-head-actions" style="flex-wrap: wrap; gap: 0.5rem">
+              <button type="button" id="cd-btn-add-payment" class="btn waves-effect teal">
+                <i class="material-icons left">payments</i>Add payment
+              </button>
+              <a href="customers.html" id="cd-btn-edit" class="btn inv-btn-outline waves-effect hide">
+                <i class="material-icons left">edit</i>Edit profile
+              </a>
+            </div>
+          </div>
+        </div>
+
+        <div class="inv-dash-metrics inv-customer-kpis" id="cd-kpi-row">
+          <div class="inv-dash-metric-chip">
+            <span class="inv-dash-metric-label">Total orders</span>
+            <span class="inv-dash-metric-value" id="cd-kpi-orders">—</span>
+            <span class="inv-dash-metric-hint" id="cd-kpi-cancelled-hint"></span>
+          </div>
+          <div class="inv-dash-metric-chip">
+            <span class="inv-dash-metric-label">Lifetime spend (net)</span>
+            <span class="inv-dash-metric-value" id="cd-kpi-spend">—</span>
+            <span class="inv-dash-metric-hint">excl. cancelled</span>
+          </div>
+          <div class="inv-dash-metric-chip">
+            <span class="inv-dash-metric-label">Total paid</span>
+            <span class="inv-dash-metric-value" id="cd-kpi-paid" data-cd-kpi="paid">—</span>
+            <span class="inv-dash-metric-hint">recorded here</span>
+          </div>
+          <div class="inv-dash-metric-chip inv-dash-metric-chip--due">
+            <span class="inv-dash-metric-label">Total due</span>
+            <span class="inv-dash-metric-value" id="cd-kpi-due" data-cd-kpi="due">—</span>
+            <span class="inv-dash-metric-hint" id="cd-kpi-due-hint">net orders − payments</span>
+          </div>
+          <div class="inv-dash-metric-chip">
+            <span class="inv-dash-metric-label">First order</span>
+            <span class="inv-dash-metric-value" id="cd-kpi-first">—</span>
+          </div>
+          <div class="inv-dash-metric-chip">
+            <span class="inv-dash-metric-label">Last order</span>
+            <span class="inv-dash-metric-value" id="cd-kpi-last">—</span>
+          </div>
+          <div class="inv-dash-metric-chip">
+            <span class="inv-dash-metric-label">Customer since</span>
+            <span class="inv-dash-metric-value" id="cd-kpi-since">—</span>
+            <span class="inv-dash-metric-hint">record created</span>
+          </div>
+        </div>
+
+        <div class="inv-content-card z-depth-1 inv-customer-profile-card">
+          <h2 class="inv-preview-heading">Contact &amp; address</h2>
+          <div class="row inv-customer-profile-grid" style="margin-bottom: 0">
+            <div class="col s12 m6">
+              <p class="inv-cd-field">
+                <span class="inv-cd-label">Phone</span>
+                <span id="cd-phone" class="inv-cd-value">—</span>
+              </p>
+              <p class="inv-cd-field">
+                <span class="inv-cd-label">Email</span>
+                <span id="cd-email" class="inv-cd-value">—</span>
+              </p>
+            </div>
+            <div class="col s12 m6">
+              <p class="inv-cd-field">
+                <span class="inv-cd-label">City</span>
+                <span id="cd-city" class="inv-cd-value">—</span>
+              </p>
+              <p class="inv-cd-field">
+                <span class="inv-cd-label">Pincode</span>
+                <span id="cd-pincode" class="inv-cd-value">—</span>
+              </p>
+            </div>
+            <div class="col s12">
+              <p class="inv-cd-field">
+                <span class="inv-cd-label">Address</span>
+                <span id="cd-address" class="inv-cd-value">—</span>
+              </p>
+            </div>
+            <div class="col s12" id="cd-notes-wrap" style="display: none">
+              <p class="inv-cd-field">
+                <span class="inv-cd-label">Notes</span>
+                <span id="cd-notes" class="inv-cd-value"></span>
+              </p>
+            </div>
+          </div>
+        </div>
+
+        <div class="inv-content-card z-depth-1" style="margin-top: 1rem">
+          <h2 class="inv-preview-heading">Payments</h2>
+          <p class="grey-text text-darken-1 inv-preview-hint">
+            Record cash or UPI received on behalf of this customer. Total due = order totals (excl. cancelled) minus payments below.
+          </p>
+          <div class="inv-table-scroll">
+            <table class="inv-data-table">
+              <thead>
+                <tr>
+                  <th>Date</th>
+                  <th>Method</th>
+                  <th class="right-align">Amount</th>
+                  <th>Note</th>
+                </tr>
+              </thead>
+              <tbody id="cd-payments-body"></tbody>
+            </table>
+          </div>
+          <p id="cd-payments-empty" class="grey-text center" style="display: none; padding: 1rem">
+            No payments recorded yet. Use <strong>Add payment</strong> above.
+          </p>
+        </div>
+
+        <div class="inv-content-card z-depth-1" style="margin-top: 1.25rem">
+          <h2 class="inv-preview-heading">Prescription timeline</h2>
+          <p class="grey-text text-darken-1 inv-preview-hint">
+            Recent prescription activity for this patient (secret line notes are not listed here).
+          </p>
+          <ul id="cd-rx-timeline" class="inv-cd-timeline" aria-label="Prescription timeline"></ul>
+          <p id="cd-rx-timeline-empty" class="grey-text center" style="display: none; padding: 1rem">
+            No prescriptions yet.
+          </p>
+          <p class="inv-dash-table-foot" style="margin-top: 0.75rem">
+            <a href="prescription-edit.html" id="cd-new-rx-link" class="btn inv-btn-outline waves-effect">
+              <i class="material-icons left">medical_services</i>Add prescription
+            </a>
+          </p>
+        </div>
+
+        <div class="inv-content-card z-depth-1" style="margin-top: 1rem">
+          <h2 class="inv-preview-heading">Order history</h2>
+          <p class="grey-text text-darken-1 inv-preview-hint">
+            All sales orders for this customer, newest first. Open an order to edit, confirm, or print the invoice.
+          </p>
+          <div class="inv-table-scroll">
+            <table class="inv-data-table">
+              <thead>
+                <tr>
+                  <th>Date</th>
+                  <th>Order #</th>
+                  <th>Status</th>
+                  <th class="right-align">Net total</th>
+                  <th class="right-align">Lines</th>
+                  <th class="inv-th-actions">Actions</th>
+                </tr>
+              </thead>
+              <tbody id="cd-orders-body"></tbody>
+            </table>
+          </div>
+          <p class="inv-dash-table-foot" style="margin-top: 0.75rem">
+            <a href="orders.html" id="cd-new-order-link" class="btn waves-effect inv-btn-primary">
+              <i class="material-icons left">add_shopping_cart</i>New order for this customer
+            </a>
+          </p>
+        </div>
+      </div>
+
+      <div id="modal-customer-payment" class="modal">
+        <div class="modal-content">
+          <h4 style="margin-top: 0">Record payment</h4>
+          <p class="grey-text" style="margin-top: 0">Cash or UPI — amount in rupees.</p>
+          <div class="row" style="margin-bottom: 0">
+            <div class="input-field col s12">
+              <input type="number" id="cp-amount" min="0.01" step="0.01" placeholder=" " class="validate" />
+              <label for="cp-amount">Amount (₹)</label>
+            </div>
+            <div class="col s12" style="margin-bottom: 0.75rem">
+              <span class="grey-text text-darken-1" style="font-size: 0.9rem">Method</span>
+              <p class="inv-cp-method-row" style="margin: 0.5rem 0 0">
+                <label class="inv-cp-method-label">
+                  <input name="cp-method" type="radio" value="cash" checked class="with-gap" />
+                  <span>Cash</span>
+                </label>
+                <label class="inv-cp-method-label">
+                  <input name="cp-method" type="radio" value="upi" class="with-gap" />
+                  <span>UPI</span>
+                </label>
+              </p>
+            </div>
+            <div class="input-field col s12">
+              <textarea id="cp-notes" class="materialize-textarea" placeholder=" "></textarea>
+              <label for="cp-notes">Note (optional)</label>
+            </div>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <a href="#!" class="modal-close btn-flat waves-effect">Cancel</a>
+          <button type="button" id="cp-submit" class="btn waves-effect teal">Save payment</button>
+        </div>
+      </div>
+    </div>
+
+    <script src="js/marg-offline.js"></script>
+    <script src="vendor/js/jquery.min.js"></script>
+    <script src="vendor/js/underscore-min.js"></script>
+    <script src="vendor/js/backbone-min.js"></script>
+    <script src="vendor/js/materialize.min.js"></script>
+    <script src="vendor/js/sql-wasm.js"></script>
+    <script src="js/db.js"></script>
+    <script src="js/views/app-layout-view.js"></script>
+    <script src="js/global-search.js"></script>
+    <script src="js/marg-sync.js"></script>
+    <script src="js/customer-detail-main.js?v=5"></script>
+  </body>
+</html>

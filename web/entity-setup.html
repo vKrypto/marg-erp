@@ -1,0 +1,280 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="theme-color" content="#00897b" />
+    <link rel="manifest" href="manifest.json" />
+    <link rel="apple-touch-icon" href="icons/icon-192.png" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-title" content="Pharmacy ERP" />
+    <title>Pharmacy ERP — Entity setup</title>
+    <link
+      rel="stylesheet"
+      href="vendor/css/materialize.min.css"
+    />
+    <link rel="stylesheet" href="vendor/css/fonts-local.css" />
+    <link rel="stylesheet" href="css/inventory.css" />
+    <link rel="stylesheet" href="css/entity-setup.css" />
+  </head>
+  <body class="entity-setup-bg inv-app-body">
+    <div id="layout-root"></div>
+    <div id="page-fragment">
+    <div id="entity-setup-app" class="entity-setup-page">
+      <div class="container" style="max-width: 1100px">
+        <div class="card entity-setup-shell">
+          <div class="row mb-0">
+            <div class="col s12 m3 entity-setup-sidebar">
+              <ul class="nav-steps">
+                <li class="active">
+                  <a href="#" class="nav-side-link">
+                    <i class="material-icons">tune</i>
+                    Entity Setup
+                  </a>
+                </li>
+                <li>
+                  <a href="#" class="nav-side-link">
+                    <i class="material-icons">storage</i>
+                    Persistence
+                  </a>
+                </li>
+              </ul>
+              <div class="setup-progress">
+                SETUP PROGRESS: <span id="progress-pct">0%</span>
+              </div>
+            </div>
+
+            <div class="col s12 m9 entity-setup-main">
+              <div id="entity-setup-step-entity">
+              <form id="entity-setup-form" novalidate>
+                <section class="setup-section">
+                  <h2 class="setup-section-title">Entity Details</h2>
+                  <div class="row">
+                    <div class="input-field col s12 m6" style="margin-top: 1.5rem">
+                      <label class="field-label-caps" for="entity_name">Entity Name</label>
+                      <input id="entity_name" name="entity_name" type="text" autocomplete="organization" />
+                    </div>
+                    <div class="input-field col s12 m6" style="margin-top: 1.5rem">
+                      <label class="field-label-caps" for="dl_number">License Number</label>
+                      <input id="dl_number" name="dl_number" type="text" autocomplete="off" />
+                    </div>
+                    <div class="input-field col s12" style="margin-top: 1.5rem">
+                      <label class="field-label-caps" for="line1">Registered Address</label>
+                      <textarea
+                        id="line1"
+                        name="line1"
+                        class="materialize-textarea"
+                        rows="3"
+                        spellcheck="false"
+                      ></textarea>
+                    </div>
+                  </div>
+                </section>
+
+                <section class="setup-section">
+                  <h2 class="setup-section-title">Inventory &amp; Stock</h2>
+                  <div class="row">
+                    <div class="col s12 m6">
+                      <div class="inventory-mini-card">
+                        <div>
+                          <h3>Auto-Reorder Level</h3>
+                          <p class="hint">Trigger when stock falls below</p>
+                        </div>
+                        <div class="value-box">
+                          <input
+                            id="field-reorder"
+                            name="auto_reorder_level"
+                            type="number"
+                            min="0"
+                            step="1"
+                          />
+                        </div>
+                      </div>
+                    </div>
+                    <div class="col s12 m6">
+                      <div class="inventory-mini-card">
+                        <div>
+                          <h3>Expiry Alert Window</h3>
+                          <p class="hint">Days before product expiry</p>
+                        </div>
+                        <div class="value-box">
+                          <input
+                            id="field-expiry"
+                            name="expiry_alert_days"
+                            type="number"
+                            min="0"
+                            step="1"
+                          />
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </section>
+
+                <section class="setup-section">
+                  <h2 class="setup-section-title">Accepted Payments</h2>
+                  <p class="setup-payment-hint grey-text">
+                    Only <strong>Cash</strong> is supported in this release. Other methods are shown for reference and
+                    cannot be selected.
+                  </p>
+                  <div class="payment-grid">
+                    <label class="payment-chip">
+                      <input id="pay-cash" type="checkbox" class="js-payment js-payment-enabled" value="cash" checked />
+                      <span class="payment-chip-label">
+                        <span class="payment-chip-check" aria-hidden="true"></span>
+                        Cash
+                      </span>
+                    </label>
+                    <div
+                      class="payment-chip payment-chip--disabled"
+                      title="Not supported in this release"
+                      aria-disabled="true"
+                    >
+                      <span class="payment-chip-label">
+                        <span class="payment-chip-check payment-chip-check--muted" aria-hidden="true"></span>
+                        Credit Card
+                      </span>
+                    </div>
+                    <div
+                      class="payment-chip payment-chip--disabled"
+                      title="Not supported in this release"
+                      aria-disabled="true"
+                    >
+                      <span class="payment-chip-label">
+                        <span class="payment-chip-check payment-chip-check--muted" aria-hidden="true"></span>
+                        UPI / QR Code
+                      </span>
+                    </div>
+                    <div
+                      class="payment-chip payment-chip--disabled"
+                      title="Not supported in this release"
+                      aria-disabled="true"
+                    >
+                      <span class="payment-chip-label">
+                        <span class="payment-chip-check payment-chip-check--muted" aria-hidden="true"></span>
+                        Loyalty Points
+                      </span>
+                    </div>
+                  </div>
+                </section>
+
+                <div class="row" style="margin-top: 2rem; margin-bottom: 0">
+                  <div class="col s12">
+                    <button
+                      id="btn-save-continue"
+                      type="submit"
+                      class="btn waves-effect waves-light teal darken-1"
+                      style="border-radius: 8px; font-weight: 600; padding: 0 1.75rem"
+                    >
+                      Save &amp; continue
+                    </button>
+                    <a href="index.html" class="btn-flat grey-text" style="margin-left: 0.5rem">Cancel</a>
+                  </div>
+                </div>
+              </form>
+              </div>
+
+              <div id="entity-setup-step-persistence" style="display: none">
+                <form id="entity-setup-form-persistence" novalidate>
+                  <section class="setup-section">
+                    <h2 class="setup-section-title">Server backup (optional)</h2>
+                    <p class="grey-text" style="margin-top: 0">
+                      Point to the Node sync server (<code>server/</code> in this project). When URL and username are set,
+                      use <strong>Sync now</strong> in the sidebar to upload your full local database, or enable auto-sync
+                      to push shortly after each save while you’re online.
+                    </p>
+                    <p class="grey-text text-darken-1" style="font-size: 0.9rem; margin-top: 0.75rem">
+                      <strong>Important:</strong> In the fields below, enter the <em>actual login</em> the server uses — for
+                      example <code>admin</code> and <code>changeme</code> if you did not change the server defaults. Do
+                      <strong>not</strong> type the words <code>SYNC_USER</code> or <code>SYNC_PASS</code> (those are only
+                      the names of environment variables on the server). Password is stored only in this browser. Use HTTPS
+                      in production.
+                    </p>
+                    <div class="row">
+                      <div class="input-field col s12" style="margin-top: 1.25rem">
+                        <label class="field-label-caps" for="sync_server_url">Server base URL</label>
+                        <input
+                          id="sync_server_url"
+                          name="sync_server_url"
+                          type="url"
+                          placeholder="http://127.0.0.1:3847"
+                          autocomplete="off"
+                        />
+                      </div>
+                      <div class="input-field col s12 m6" style="margin-top: 1rem">
+                        <label class="field-label-caps" for="sync_username">Username</label>
+                        <input
+                          id="sync_username"
+                          name="sync_username"
+                          type="text"
+                          autocomplete="username"
+                          placeholder="e.g. admin"
+                        />
+                      </div>
+                      <div class="input-field col s12 m6" style="margin-top: 1rem">
+                        <label class="field-label-caps" for="sync_password">Password</label>
+                        <input
+                          id="sync_password"
+                          name="sync_password"
+                          type="password"
+                          autocomplete="current-password"
+                          placeholder="e.g. changeme"
+                        />
+                      </div>
+                      <div class="col s12" style="margin-top: 0.5rem">
+                        <label>
+                          <input type="checkbox" id="sync_auto" class="filled-in" />
+                          <span>Auto-sync after changes (when online)</span>
+                        </label>
+                      </div>
+                    </div>
+                  </section>
+                  <div class="row" style="margin-top: 1.5rem; margin-bottom: 0">
+                    <div class="col s12">
+                      <button
+                        id="btn-save-persistence"
+                        type="submit"
+                        class="btn waves-effect waves-light teal darken-1"
+                        style="border-radius: 8px; font-weight: 600; padding: 0 1.75rem"
+                      >
+                        Save persistence settings
+                      </button>
+                      <a href="app.html" class="btn-flat grey-text" style="margin-left: 0.5rem">Back to dashboard</a>
+                    </div>
+                  </div>
+                </form>
+              </div>
+            </div>
+          </div>
+
+          <div class="card-action grey lighten-4 entity-setup-footer-strip">
+            <div class="storage-hint">
+              <i class="material-icons" style="font-size: 18px">dns</i>
+              <span id="storage-hint-text">…</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="entity-setup-external-links">
+          <a href="#" class="js-nav-placeholder">Configuration guide</a>
+          <span class="sep">|</span>
+          <a href="#" class="js-nav-placeholder">Security policy</a>
+        </div>
+      </div>
+    </div>
+    </div>
+
+    <script src="js/marg-offline.js"></script>
+    <script src="vendor/js/jquery.min.js"></script>
+    <script src="vendor/js/underscore-min.js"></script>
+    <script src="vendor/js/backbone-min.js"></script>
+    <script src="vendor/js/materialize.min.js"></script>
+    <script src="vendor/js/sql-wasm.js"></script>
+    <script src="js/db.js"></script>
+    <script src="js/views/app-layout-view.js"></script>
+    <script src="js/global-search.js"></script>
+    <script src="js/marg-sync.js"></script>
+    <script src="js/views/entity-setup-view.js"></script>
+    <script src="js/entity-setup-main.js"></script>
+  </body>
+</html>

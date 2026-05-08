@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="theme-color" content="#00897b" />
+    <link rel="manifest" href="manifest.json" />
+    <link rel="apple-touch-icon" href="icons/icon-192.png" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-title" content="Pharmacy ERP" />
+    <title>Pharmacy ERP — Session created</title>
+    <link
+      rel="stylesheet"
+      href="vendor/css/materialize.min.css"
+    />
+    <link rel="stylesheet" href="vendor/css/fonts-local.css" />
+    <link rel="stylesheet" href="css/login.css" />
+  </head>
+  <body class="session-page">
+    <div id="inv-offline-banner" class="inv-offline-banner inv-offline-banner--login" role="status" aria-live="polite" hidden>
+      <i class="material-icons" aria-hidden="true">wifi_off</i>
+      <span>You’re offline — you can still use saved data in this browser.</span>
+    </div>
+    <div class="container">
+      <div class="row">
+        <div class="col s12 m8 offset-m2 l6 offset-l3">
+          <div class="card z-depth-2 session-welcome-card">
+            <div class="card-content center-align" style="padding: 2rem 1.75rem 1.5rem">
+              <div class="success-icon">
+                <i class="material-icons medium">check_circle</i>
+              </div>
+              <h5 class="grey-text text-darken-3" style="font-weight: 600; margin-top: 0">
+                Session created
+              </h5>
+              <p class="grey-text" style="margin-bottom: 0.5rem">You’re signed in as</p>
+              <p id="entity-name-display" class="entity-name">…</p>
+              <p class="grey-text text-darken-1" style="font-size: 0.95rem; line-height: 1.5; max-width: 380px; margin: 0 auto">
+                Your data is stored only in this browser. You can add shop profile details later from
+                settings when that screen is ready.
+              </p>
+            </div>
+            <div class="card-action" style="border-top: 1px solid #eee; padding: 1rem 1.5rem 1.25rem">
+              <a
+                href="entity-setup.html"
+                id="btn-continue-app"
+                class="btn waves-effect waves-light teal darken-1"
+                style="width: 100%; border-radius: 8px; font-weight: 600"
+              >
+                Continue to app
+              </a>
+              <div class="center-align" style="margin-top: 0.75rem">
+                <a href="index.html" class="grey-text" style="font-size: 0.85rem">Back to login</a>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <script src="js/marg-offline.js"></script>
+    <script src="vendor/js/jquery.min.js"></script>
+    <script src="vendor/js/materialize.min.js"></script>
+    <script src="vendor/js/sql-wasm.js"></script>
+    <script src="js/db.js"></script>
+    <script src="js/new-session.js"></script>
+  </body>
+</html>

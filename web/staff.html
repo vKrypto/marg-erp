@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="theme-color" content="#00897b" />
+    <link rel="manifest" href="manifest.json" />
+    <link rel="apple-touch-icon" href="icons/icon-192.png" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-title" content="Pharmacy ERP" />
+    <title>Pharmacy ERP — Staff management</title>
+    <link rel="stylesheet" href="vendor/css/materialize.min.css" />
+    <link rel="stylesheet" href="vendor/css/fonts-local.css" />
+    <link rel="stylesheet" href="css/inventory.css" />
+  </head>
+  <body class="inv-app-body">
+    <div id="layout-root"></div>
+    <div id="page-fragment">
+      <div class="inv-main-column">
+        <div class="inv-content-card z-depth-1">
+          <header class="inv-panel-head">
+            <div class="inv-panel-head-text">
+              <h1 class="inv-panel-title">Staff management</h1>
+              <p class="inv-panel-subtitle">
+                People who use this pharmacy app for this entity. Default <strong>Default Admin</strong>,
+                <strong>Default Staff</strong>, and <strong>Default Doctor</strong> are created automatically; rename them
+                here. Only admins can manage staff.
+              </p>
+            </div>
+            <button type="button" id="btn-staff-add" class="btn waves-effect inv-btn-primary">
+              <i class="material-icons left">person_add</i>Add staff
+            </button>
+          </header>
+
+          <div class="inv-table-scroll">
+            <table class="inv-data-table">
+              <thead>
+                <tr>
+                  <th>Name</th>
+                  <th>Email</th>
+                  <th>Phone</th>
+                  <th>Role</th>
+                  <th>Updated</th>
+                  <th class="inv-th-actions">Actions</th>
+                </tr>
+              </thead>
+              <tbody id="staff-table-body"></tbody>
+            </table>
+          </div>
+        </div>
+
+        <p class="inv-disclaimer">
+          Roles control access to this screen only; data stays on this device. Switch the active person from the sidebar
+          under <strong>Working as</strong>.
+        </p>
+      </div>
+    </div>
+
+    <div id="modal-staff" class="modal modal-fixed-footer">
+      <form id="form-staff">
+        <div class="modal-content">
+          <h4 id="modal-staff-title">Add staff</h4>
+          <input type="hidden" id="staff-id" value="" />
+          <div class="row">
+            <div class="input-field col s12">
+              <input id="sf-name" type="text" required autocomplete="name" />
+              <label for="sf-name">Name *</label>
+            </div>
+            <div class="input-field col s12 m6">
+              <input id="sf-email" type="email" autocomplete="email" />
+              <label for="sf-email">Email</label>
+            </div>
+            <div class="input-field col s12 m6">
+              <input id="sf-phone" type="tel" autocomplete="tel" />
+              <label for="sf-phone">Phone</label>
+            </div>
+            <div class="input-field col s12">
+              <select id="sf-role" name="role">
+                <option value="staff">Staff</option>
+                <option value="doctor">Doctor</option>
+                <option value="admin">Admin</option>
+              </select>
+              <label>Role</label>
+            </div>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="modal-close btn-flat waves-effect">Cancel</button>
+          <button type="submit" class="btn waves-effect inv-btn-primary">Save</button>
+        </div>
+      </form>
+    </div>
+
+    <script src="js/marg-offline.js"></script>
+    <script src="vendor/js/jquery.min.js"></script>
+    <script src="vendor/js/underscore-min.js"></script>
+    <script src="vendor/js/backbone-min.js"></script>
+    <script src="vendor/js/materialize.min.js"></script>
+    <script src="vendor/js/sql-wasm.js"></script>
+    <script src="js/db.js"></script>
+    <script src="js/views/app-layout-view.js"></script>
+    <script src="js/global-search.js"></script>
+    <script src="js/marg-sync.js"></script>
+    <script src="js/staff-main.js"></script>
+  </body>
+</html>

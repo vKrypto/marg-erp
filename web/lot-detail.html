@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="theme-color" content="#00897b" />
+    <link rel="manifest" href="manifest.json" />
+    <link rel="apple-touch-icon" href="icons/icon-192.png" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-title" content="Pharmacy ERP" />
+    <title>Pharmacy ERP — Lot details</title>
+    <link
+      rel="stylesheet"
+      href="vendor/css/materialize.min.css"
+    />
+    <link rel="stylesheet" href="vendor/css/fonts-local.css" />
+    <link rel="stylesheet" href="css/inventory.css" />
+  </head>
+  <body class="inv-app-body page-lot-detail">
+    <div id="layout-root"></div>
+    <div id="page-fragment">
+      <div class="inv-main-column">
+        <div class="inv-content-card z-depth-1">
+          <header class="inv-panel-head">
+            <div class="inv-panel-head-text">
+              <h1 class="inv-panel-title" id="ld-title">Lot</h1>
+              <p class="inv-panel-subtitle" id="ld-sub">—</p>
+            </div>
+            <div class="inv-panel-head-actions" style="flex-wrap: wrap; gap: 0.5rem">
+              <a href="inventory.html?panel=lots" class="btn-flat inv-link-btn waves-effect">
+                <i class="material-icons left">arrow_back</i>All lots
+              </a>
+              <a href="#" id="ld-btn-edit" class="btn waves-effect inv-btn-outline hide">
+                <i class="material-icons left">edit</i>Edit lot
+              </a>
+              <a href="lot-new.html" class="btn waves-effect inv-btn-outline">
+                <i class="material-icons left">add</i>New purchase lot
+              </a>
+            </div>
+          </header>
+
+          <div class="row" id="ld-meta-row" style="margin-bottom: 0">
+            <div class="col s12 m6 l4">
+              <p class="inv-order-field-label grey-text">Vendor</p>
+              <p id="ld-vendor" class="inv-mono" style="margin-top: 0">—</p>
+            </div>
+            <div class="col s12 m6 l4">
+              <p class="inv-order-field-label grey-text">Lot / invoice date</p>
+              <p id="ld-lot-date" style="margin-top: 0">—</p>
+            </div>
+            <div class="col s12 m6 l4">
+              <p class="inv-order-field-label grey-text">Delivered date</p>
+              <p id="ld-delivered-date" style="margin-top: 0">—</p>
+            </div>
+            <div class="col s12 m6 l4">
+              <p class="inv-order-field-label grey-text">Delivered by</p>
+              <p id="ld-delivered-by" style="margin-top: 0">—</p>
+            </div>
+            <div class="col s12 m6 l4">
+              <p class="inv-order-field-label grey-text">Recorded</p>
+              <p id="ld-created" class="inv-mono" style="margin-top: 0">—</p>
+            </div>
+          </div>
+
+          <div class="inv-order-summary" id="ld-money" style="margin-top: 1rem" aria-live="polite">
+            <span>Selling total (₹): <strong id="ld-total">—</strong></span>
+            <span>Margin on MRP (₹): <strong id="ld-margin">—</strong></span>
+            <span>Total paid (₹): <strong id="ld-paid">—</strong></span>
+          </div>
+
+          <div style="margin-top: 1.25rem">
+            <p class="inv-order-field-label grey-text" style="margin-bottom: 0.25rem">Notes</p>
+            <p id="ld-notes" class="grey-text text-darken-2" style="margin: 0; white-space: pre-wrap">—</p>
+          </div>
+
+          <h3 class="inv-panel-title" style="font-size: 1.1rem; margin: 1.5rem 0 0.5rem">Line items</h3>
+          <div class="inv-table-scroll">
+            <table class="inv-data-table">
+              <thead>
+                <tr>
+                  <th>Product</th>
+                  <th>Code</th>
+                  <th class="right-align">Strips (in)</th>
+                  <th class="right-align">Avail. strips</th>
+                  <th class="right-align">Avail. tabs</th>
+                  <th>Delivered on</th>
+                  <th class="right-align">Strip MRP ₹</th>
+                  <th class="right-align">Strip selling ₹</th>
+                  <th>Line notes</th>
+                </tr>
+              </thead>
+              <tbody id="ld-lines-body"></tbody>
+            </table>
+          </div>
+        </div>
+
+        <p class="inv-disclaimer">Purchase lot data is stored locally in this browser.</p>
+      </div>
+    </div>
+
+    <script src="js/marg-offline.js"></script>
+    <script src="vendor/js/jquery.min.js"></script>
+    <script src="vendor/js/underscore-min.js"></script>
+    <script src="vendor/js/backbone-min.js"></script>
+    <script src="vendor/js/materialize.min.js"></script>
+    <script src="vendor/js/sql-wasm.js"></script>
+    <script src="js/db.js"></script>
+    <script src="js/views/app-layout-view.js"></script>
+    <script src="js/global-search.js"></script>
+    <script src="js/marg-sync.js"></script>
+    <script src="js/lot-detail-main.js"></script>
+  </body>
+</html>

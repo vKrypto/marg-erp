@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="theme-color" content="#00897b" />
+    <link rel="manifest" href="manifest.json" />
+    <link rel="apple-touch-icon" href="icons/icon-192.png" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-title" content="Pharmacy ERP" />
+    <title>Pharmacy ERP — Invoice samples</title>
+    <link
+      rel="stylesheet"
+      href="vendor/css/materialize.min.css"
+    />
+    <link rel="stylesheet" href="vendor/css/fonts-local.css" />
+    <link rel="stylesheet" href="css/inventory.css" />
+  </head>
+  <body class="inv-app-body">
+    <div id="layout-root"></div>
+    <div id="page-fragment">
+      <div class="inv-main-column">
+        <div class="inv-content-card z-depth-1">
+          <header class="inv-panel-head">
+            <div class="inv-panel-head-text">
+              <h1 class="inv-panel-title">Invoice samples</h1>
+              <p class="inv-panel-subtitle">
+                Compare built-in invoice looks with live previews. <strong>GST pharmacy grid</strong> is the default active sample for new entities.
+                Use <strong>Use this sample</strong> to set which design prints from Orders. For fine-tuning fields and paper,
+                open <a href="invoice-format.html">Invoice format</a>.
+              </p>
+            </div>
+          </header>
+
+          <div class="row" id="inv-invoice-samples-grid"></div>
+
+          <div class="row inv-invoice-format-preview-row">
+            <div class="col s12 inv-invoice-format-preview">
+              <div class="inv-preview-panel">
+                <h2 class="inv-preview-heading">Your active format</h2>
+                <p class="grey-text text-darken-1 inv-preview-hint">
+                  Same preview as on <a href="invoice-format.html">Invoice format</a>: uses your
+                  <strong>saved options</strong> for whichever sample or custom format is active. Data comes from your
+                  <strong>latest order</strong> when available; otherwise the sample order below.
+                </p>
+                <iframe
+                  id="invoice-active-format-preview-frame"
+                  class="inv-invoice-preview-frame"
+                  title="Active invoice format preview"
+                ></iframe>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <script src="js/marg-offline.js"></script>
+    <script src="vendor/js/jquery.min.js"></script>
+    <script src="vendor/js/underscore-min.js"></script>
+    <script src="vendor/js/backbone-min.js"></script>
+    <script src="vendor/js/materialize.min.js"></script>
+    <script src="vendor/js/sql-wasm.js"></script>
+    <script src="js/terms-defaults.js"></script>
+    <script src="js/invoice-format-defaults.js"></script>
+    <script src="js/invoice-html.js"></script>
+    <script src="js/db.js"></script>
+    <script src="js/views/app-layout-view.js"></script>
+    <script src="js/global-search.js"></script>
+    <script src="js/marg-sync.js"></script>
+    <script src="js/invoice-samples-main.js"></script>
+  </body>
+</html>

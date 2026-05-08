@@ -1,0 +1,282 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="theme-color" content="#00897b" />
+    <link rel="manifest" href="manifest.json" />
+    <link rel="apple-touch-icon" href="icons/icon-192.png" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-title" content="Pharmacy ERP" />
+    <title>Pharmacy ERP — Inventory</title>
+    <link
+      rel="stylesheet"
+      href="vendor/css/materialize.min.css"
+    />
+    <link rel="stylesheet" href="vendor/css/fonts-local.css" />
+    <link rel="stylesheet" href="css/inventory.css?v=5" />
+  </head>
+  <body class="inv-app-body page-inventory">
+    <div id="layout-root"></div>
+    <div id="page-fragment">
+        <div id="panel-products" class="inventory-panel">
+          <div class="inv-content-card z-depth-1">
+            <header class="inv-panel-head">
+              <div class="inv-panel-head-text">
+                <h1 class="inv-panel-title">Product catalogue</h1>
+                <p class="inv-panel-subtitle">Manage medicine master data and pack structures</p>
+              </div>
+              <div class="inv-panel-head-actions">
+                <button type="button" id="btn-csv-sample-products" class="btn waves-effect inv-btn-outline">
+                  <i class="material-icons left">description</i>Sample CSV
+                </button>
+                <button type="button" id="btn-csv-import-products" class="btn waves-effect inv-btn-outline">
+                  <i class="material-icons left">upload_file</i>Import CSV
+                </button>
+                <input type="file" id="csv-products-file" accept=".csv,text/csv" class="hide" />
+                <a href="product-new.html" id="btn-product-add" class="btn waves-effect inv-btn-primary">
+                  <i class="material-icons left">add</i>Add product
+                </a>
+              </div>
+            </header>
+
+            <div class="inv-toolbar-row">
+              <div class="inv-search-wrap">
+                <i class="material-icons inv-search-icon" aria-hidden="true">search</i>
+                <input
+                  id="product-search"
+                  type="search"
+                  class="inv-search-input browser-default"
+                  placeholder="Search products by name, code or barcode…"
+                  autocomplete="off"
+                />
+              </div>
+              <div class="inv-filter-wrap">
+                <label for="product-type-filter" class="inv-filter-label">Type</label>
+                <select id="product-type-filter" class="browser-default inv-status-select">
+                  <option value="" selected>All types</option>
+                  <option value="__none__">No type</option>
+                </select>
+              </div>
+              <div class="inv-filter-wrap">
+                <label for="product-status-filter" class="inv-filter-label">Status</label>
+                <select id="product-status-filter" class="browser-default inv-status-select">
+                  <option value="all" selected>All statuses</option>
+                  <option value="active">Active</option>
+                  <option value="inactive">Inactive</option>
+                </select>
+              </div>
+            </div>
+
+            <div class="inv-table-scroll">
+              <!-- Product row column order must match refreshProductsTable() in js/inventory-main.js -->
+              <table class="inv-data-table">
+                <thead>
+                  <tr>
+                    <th>Product name</th>
+                    <th>Code</th>
+                    <th>Type</th>
+                    <th>In stock (tabs)</th>
+                    <th>Pack label</th>
+                    <th>Tabs / strip</th>
+                    <th>Strip / pack</th>
+                    <th>Status</th>
+                    <th class="inv-th-actions">Actions</th>
+                  </tr>
+                </thead>
+                <tbody id="product-table-body"></tbody>
+              </table>
+            </div>
+
+            <footer class="inv-table-footer">
+              <span id="product-page-info" class="inv-page-info">Showing 0 of 0 products</span>
+              <div class="inv-page-btns">
+                <button type="button" id="btn-product-prev" class="btn inv-btn-page waves-effect" disabled>
+                  Prev
+                </button>
+                <button type="button" id="btn-product-next" class="btn inv-btn-page waves-effect" disabled>
+                  Next
+                </button>
+              </div>
+            </footer>
+          </div>
+        </div>
+
+        <div id="panel-vendors" class="inventory-panel hide">
+          <div class="inv-content-card z-depth-1">
+            <header class="inv-panel-head">
+              <div class="inv-panel-head-text">
+                <h1 class="inv-panel-title">Vendors</h1>
+                <p class="inv-panel-subtitle">Suppliers, GSTIN, and points of contact</p>
+              </div>
+              <div class="inv-panel-head-actions">
+                <button type="button" id="btn-csv-sample-vendors" class="btn waves-effect inv-btn-outline">
+                  <i class="material-icons left">description</i>Sample CSV
+                </button>
+                <button type="button" id="btn-csv-import-vendors" class="btn waves-effect inv-btn-outline">
+                  <i class="material-icons left">upload_file</i>Import CSV
+                </button>
+                <input type="file" id="csv-vendors-file" accept=".csv,text/csv" class="hide" />
+                <button type="button" id="btn-vendor-add" class="btn waves-effect inv-btn-primary">
+                  <i class="material-icons left">add</i>Add vendor
+                </button>
+              </div>
+            </header>
+            <div class="inv-table-scroll">
+              <table class="inv-data-table">
+                <thead>
+                  <tr>
+                    <th>Name</th>
+                    <th>Phone</th>
+                    <th>City</th>
+                    <th>GSTIN</th>
+                    <th class="inv-th-actions">Actions</th>
+                  </tr>
+                </thead>
+                <tbody id="vendor-table-body"></tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+
+        <div id="panel-lots" class="inventory-panel hide">
+          <div class="inv-content-card z-depth-1">
+            <header class="inv-panel-head">
+              <div class="inv-panel-head-text">
+                <h1 class="inv-panel-title">Purchases &amp; lots</h1>
+                <p class="inv-panel-subtitle">Delivery batches and purchase line items</p>
+              </div>
+              <div class="inv-panel-head-actions">
+                <button type="button" id="btn-csv-sample-lots" class="btn waves-effect inv-btn-outline">
+                  <i class="material-icons left">description</i>Sample CSV
+                </button>
+                <button type="button" id="btn-csv-import-lots" class="btn waves-effect inv-btn-outline">
+                  <i class="material-icons left">upload_file</i>Import CSV
+                </button>
+                <input type="file" id="csv-lots-file" accept=".csv,text/csv" class="hide" />
+                <a href="lot-new.html" id="btn-lot-add" class="btn waves-effect inv-btn-primary">
+                  <i class="material-icons left">add</i>New purchase lot
+                </a>
+              </div>
+            </header>
+            <div class="inv-table-scroll">
+              <table class="inv-data-table">
+                <thead>
+                  <tr>
+                    <th>Lot #</th>
+                    <th>Vendor</th>
+                    <th>Delivered</th>
+                    <th class="right-align">Lines</th>
+                    <th class="inv-th-actions">Edit</th>
+                  </tr>
+                </thead>
+                <tbody id="lot-table-body"></tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+
+        <p class="inv-disclaimer">
+          All inventory data is stored locally in this browser (SQLite / IndexedDB). Please export backups regularly.
+        </p>
+    </div>
+
+    <!-- Vendor modal -->
+    <div id="modal-vendor" class="modal modal-fixed-footer">
+      <form id="form-vendor">
+        <div class="modal-content">
+          <h4 id="modal-vendor-title">Add vendor</h4>
+          <input type="hidden" id="vendor-id" value="" />
+          <div class="row">
+            <div class="input-field col s12">
+              <input id="vf-name" type="text" required />
+              <label for="vf-name">Vendor name *</label>
+            </div>
+            <div class="input-field col s12 m6">
+              <input id="vf-phone" type="text" />
+              <label for="vf-phone">Phone</label>
+            </div>
+            <div class="input-field col s12 m6">
+              <input id="vf-email" type="email" />
+              <label for="vf-email">Email</label>
+            </div>
+            <div class="input-field col s12">
+              <input id="vf-addr1" type="text" />
+              <label for="vf-addr1">Address line 1</label>
+            </div>
+            <div class="input-field col s12 m4">
+              <input id="vf-city" type="text" />
+              <label for="vf-city">City</label>
+            </div>
+            <div class="input-field col s12 m4">
+              <input id="vf-state" type="text" />
+              <label for="vf-state">State</label>
+            </div>
+            <div class="input-field col s12 m4">
+              <input id="vf-pin" type="text" />
+              <label for="vf-pin">Pincode</label>
+            </div>
+            <div class="input-field col s12">
+              <input id="vf-gstin" type="text" />
+              <label for="vf-gstin">GSTIN</label>
+            </div>
+            <div class="input-field col s12">
+              <textarea id="vf-notes" class="materialize-textarea"></textarea>
+              <label for="vf-notes">Notes</label>
+            </div>
+          </div>
+          <div id="vendor-poc-section" class="hide">
+            <h6>Points of contact</h6>
+            <table class="striped poc-row">
+              <thead>
+                <tr>
+                  <th>Name</th>
+                  <th>Phone</th>
+                  <th>Role</th>
+                  <th></th>
+                </tr>
+              </thead>
+              <tbody id="vendor-poc-body"></tbody>
+            </table>
+            <div class="row" style="margin-top: 1rem">
+              <div class="input-field col s12 m4">
+                <input id="poc-name" type="text" />
+                <label for="poc-name">New POC name</label>
+              </div>
+              <div class="input-field col s12 m4">
+                <input id="poc-phone" type="text" />
+                <label for="poc-phone">Phone</label>
+              </div>
+              <div class="input-field col s12 m4">
+                <input id="poc-role" type="text" />
+                <label for="poc-role">Role</label>
+              </div>
+              <div class="col s12">
+                <button type="button" id="btn-poc-add" class="btn-small waves-effect teal lighten-1">
+                  Add contact
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="modal-close btn-flat grey-text">Cancel</button>
+          <button type="submit" class="btn waves-effect waves-light teal darken-1">Save vendor</button>
+        </div>
+      </form>
+    </div>
+
+    <script src="js/marg-offline.js"></script>
+    <script src="vendor/js/jquery.min.js"></script>
+    <script src="vendor/js/underscore-min.js"></script>
+    <script src="vendor/js/backbone-min.js"></script>
+    <script src="vendor/js/materialize.min.js"></script>
+    <script src="vendor/js/sql-wasm.js"></script>
+    <script src="js/db.js"></script>
+    <script src="js/views/app-layout-view.js"></script>
+    <script src="js/global-search.js"></script>
+    <script src="js/marg-sync.js"></script>
+    <script src="js/inventory-csv.js"></script>
+    <script src="js/inventory-main.js?v=5"></script>
+  </body>
+</html>

@@ -1,0 +1,179 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="theme-color" content="#00897b" />
+    <link rel="manifest" href="manifest.json" />
+    <link rel="apple-touch-icon" href="icons/icon-192.png" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-title" content="Pharmacy ERP" />
+    <title>Pharmacy ERP — Product</title>
+    <link
+      rel="stylesheet"
+      href="vendor/css/materialize.min.css"
+    />
+    <link rel="stylesheet" href="vendor/css/fonts-local.css" />
+    <link rel="stylesheet" href="css/inventory.css?v=8" />
+  </head>
+  <body class="inv-app-body page-product-detail">
+    <div id="layout-root"></div>
+    <div id="page-fragment">
+      <div class="inv-main-column">
+        <div class="inv-customer-detail-head">
+          <a href="inventory.html?panel=products" class="inv-back-link btn-flat waves-effect">
+            <i class="material-icons left">arrow_back</i>Products
+          </a>
+          <div class="inv-panel-head" style="margin-bottom: 0">
+            <div class="inv-panel-head-text">
+              <h1 class="inv-panel-title" id="pd-name">—</h1>
+              <p class="inv-panel-subtitle" id="pd-sub">—</p>
+            </div>
+            <div class="inv-panel-head-actions">
+              <a href="#" id="pd-btn-edit" class="btn inv-btn-outline waves-effect hide">
+                <i class="material-icons left">edit</i>Edit
+              </a>
+              <button type="button" id="pd-btn-deactivate" class="btn inv-btn-outline waves-effect hide">
+                <i class="material-icons left">delete</i>Deactivate
+              </button>
+              <button type="button" id="pd-btn-activate" class="btn inv-btn-outline waves-effect hide">
+                <i class="material-icons left">restore</i>Activate
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <div id="pd-inactive-banner" class="inv-content-card z-depth-1 hide pd-inactive-banner">
+          <div class="pd-inactive-banner-inner">
+            <span class="pd-inactive-banner-text"
+              >This product is inactive — it is hidden from new stock lines and product search.</span>
+            <button type="button" id="pd-btn-activate-banner" class="btn waves-effect teal">
+              <i class="material-icons left">restore</i>Activate
+            </button>
+          </div>
+        </div>
+
+        <div class="inv-dash-metrics inv-customer-kpis" id="pd-kpi-row">
+          <div class="inv-dash-metric-chip inv-dash-metric-chip--status">
+            <span class="inv-dash-metric-label">Status</span>
+            <div class="pd-status-value-row">
+              <span class="inv-dash-metric-value" id="pd-kpi-status">—</span>
+              <button type="button" id="pd-btn-activate-inline" class="btn-small waves-effect teal lighten-1 hide">
+                Activate
+              </button>
+            </div>
+          </div>
+          <div class="inv-dash-metric-chip">
+            <span class="inv-dash-metric-label">Stock on hand</span>
+            <span class="inv-dash-metric-value" id="pd-kpi-stock">—</span>
+            <span class="inv-dash-metric-hint">sellable tablets (sum of lot line available tabs)</span>
+          </div>
+          <div class="inv-dash-metric-chip">
+            <span class="inv-dash-metric-label">Latest strip selling</span>
+            <span class="inv-dash-metric-value" id="pd-kpi-price">—</span>
+          </div>
+        </div>
+
+        <div class="inv-content-card z-depth-1 inv-customer-profile-card">
+          <h2 class="inv-preview-heading">Identifiers &amp; pack</h2>
+          <div class="row inv-customer-profile-grid" style="margin-bottom: 0">
+            <div class="col s12 m6">
+              <p class="inv-cd-field">
+                <span class="inv-cd-label">Product type</span>
+                <span id="pd-product-type" class="inv-cd-value">—</span>
+              </p>
+              <p class="inv-cd-field">
+                <span class="inv-cd-label">Internal code</span>
+                <span id="pd-code" class="inv-cd-value">—</span>
+              </p>
+              <p class="inv-cd-field">
+                <span class="inv-cd-label">Barcode</span>
+                <span id="pd-barcode" class="inv-cd-value">—</span>
+              </p>
+            </div>
+            <div class="col s12 m6">
+              <p class="inv-cd-field">
+                <span class="inv-cd-label">Pack label</span>
+                <span id="pd-pack" class="inv-cd-value">—</span>
+              </p>
+              <p class="inv-cd-field">
+                <span class="inv-cd-label">Strips / pack · units / strip</span>
+                <span id="pd-units" class="inv-cd-value">—</span>
+              </p>
+            </div>
+          </div>
+        </div>
+
+        <div class="inv-content-card z-depth-1 inv-customer-profile-card" id="pd-longtext-card">
+          <h2 class="inv-preview-heading">Description &amp; clinical</h2>
+          <div class="row" style="margin-bottom: 0">
+            <div class="col s12 pd-long-block" id="pd-desc-wrap" style="display: none">
+              <p class="inv-cd-field">
+                <span class="inv-cd-label">Description</span>
+                <span id="pd-desc" class="inv-cd-value inv-cd-value--block"></span>
+              </p>
+            </div>
+            <div class="col s12 pd-long-block" id="pd-comp-wrap" style="display: none">
+              <p class="inv-cd-field">
+                <span class="inv-cd-label">Chemical composition</span>
+                <span id="pd-composition" class="inv-cd-value inv-cd-value--block"></span>
+              </p>
+            </div>
+            <div class="col s12 m6 pd-long-block" id="pd-rec-wrap" style="display: none">
+              <p class="inv-cd-field">
+                <span class="inv-cd-label">General recommendation</span>
+                <span id="pd-recommend" class="inv-cd-value inv-cd-value--block"></span>
+              </p>
+            </div>
+            <div class="col s12 m6 pd-long-block" id="pd-where-wrap" style="display: none">
+              <p class="inv-cd-field">
+                <span class="inv-cd-label">Where to use</span>
+                <span id="pd-where" class="inv-cd-value inv-cd-value--block"></span>
+              </p>
+            </div>
+          </div>
+          <p id="pd-longtext-empty" class="grey-text" style="margin: 0; display: none">
+            No extended description stored for this product.
+          </p>
+        </div>
+
+        <div class="inv-content-card z-depth-1">
+          <h2 class="inv-preview-heading">Purchase history (this product)</h2>
+          <p class="grey-text text-darken-1" style="margin: 0 0 0.75rem; font-size: 0.9rem">
+            Strips received, strips still available, and sellable tablets per lot line.
+          </p>
+          <div class="inv-table-scroll">
+            <table class="inv-data-table">
+              <thead>
+                <tr>
+                  <th>Lot #</th>
+                  <th>Vendor</th>
+                  <th class="right-align">Strips (in)</th>
+                  <th class="right-align">Avail. strips</th>
+                  <th class="right-align">Avail. tabs</th>
+                  <th class="right-align">Strip selling</th>
+                  <th class="inv-th-actions">Lot</th>
+                </tr>
+              </thead>
+              <tbody id="pd-lines-body"></tbody>
+            </table>
+          </div>
+        </div>
+
+        <p class="inv-disclaimer">Data is stored locally in this browser.</p>
+      </div>
+    </div>
+
+    <script src="js/marg-offline.js"></script>
+    <script src="vendor/js/jquery.min.js"></script>
+    <script src="vendor/js/underscore-min.js"></script>
+    <script src="vendor/js/backbone-min.js"></script>
+    <script src="vendor/js/materialize.min.js"></script>
+    <script src="vendor/js/sql-wasm.js"></script>
+    <script src="js/db.js"></script>
+    <script src="js/views/app-layout-view.js"></script>
+    <script src="js/global-search.js"></script>
+    <script src="js/marg-sync.js"></script>
+    <script src="js/product-detail-main.js?v=8"></script>
+  </body>
+</html>

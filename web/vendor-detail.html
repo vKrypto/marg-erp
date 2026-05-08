@@ -1,0 +1,158 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="theme-color" content="#00897b" />
+    <link rel="manifest" href="manifest.json" />
+    <link rel="apple-touch-icon" href="icons/icon-192.png" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-title" content="Pharmacy ERP" />
+    <title>Pharmacy ERP — Vendor</title>
+    <link
+      rel="stylesheet"
+      href="vendor/css/materialize.min.css"
+    />
+    <link rel="stylesheet" href="vendor/css/fonts-local.css" />
+    <link rel="stylesheet" href="css/inventory.css" />
+  </head>
+  <body class="inv-app-body page-vendor-detail">
+    <div id="layout-root"></div>
+    <div id="page-fragment">
+      <div class="inv-main-column">
+        <div class="inv-customer-detail-head">
+          <a href="inventory.html?panel=vendors" class="inv-back-link btn-flat waves-effect">
+            <i class="material-icons left">arrow_back</i>Vendors
+          </a>
+          <div class="inv-panel-head" style="margin-bottom: 0">
+            <div class="inv-panel-head-text">
+              <h1 class="inv-panel-title" id="vd-name">—</h1>
+              <p class="inv-panel-subtitle" id="vd-sub">—</p>
+            </div>
+            <div class="inv-panel-head-actions">
+              <a href="#" id="vd-btn-edit" class="btn inv-btn-outline waves-effect hide">
+                <i class="material-icons left">edit</i>Edit vendor
+              </a>
+            </div>
+          </div>
+        </div>
+
+        <div class="inv-dash-metrics inv-customer-kpis" id="vd-kpi-row">
+          <div class="inv-dash-metric-chip">
+            <span class="inv-dash-metric-label">Purchase lots</span>
+            <span class="inv-dash-metric-value" id="vd-kpi-lots">—</span>
+          </div>
+          <div class="inv-dash-metric-chip">
+            <span class="inv-dash-metric-label">Total billed (lots)</span>
+            <span class="inv-dash-metric-value" id="vd-kpi-total">—</span>
+            <span class="inv-dash-metric-hint">sum of lot totals</span>
+          </div>
+          <div class="inv-dash-metric-chip">
+            <span class="inv-dash-metric-label">Total paid</span>
+            <span class="inv-dash-metric-value" id="vd-kpi-paid">—</span>
+          </div>
+          <div class="inv-dash-metric-chip">
+            <span class="inv-dash-metric-label">Balance due</span>
+            <span class="inv-dash-metric-value" id="vd-kpi-balance">—</span>
+            <span class="inv-dash-metric-hint">billed − paid</span>
+          </div>
+        </div>
+
+        <div class="inv-content-card z-depth-1 inv-customer-profile-card">
+          <h2 class="inv-preview-heading">Contact &amp; registration</h2>
+          <div class="row inv-customer-profile-grid" style="margin-bottom: 0">
+            <div class="col s12 m6">
+              <p class="inv-cd-field">
+                <span class="inv-cd-label">Phone</span>
+                <span id="vd-phone" class="inv-cd-value">—</span>
+              </p>
+              <p class="inv-cd-field">
+                <span class="inv-cd-label">Email</span>
+                <span id="vd-email" class="inv-cd-value">—</span>
+              </p>
+              <p class="inv-cd-field">
+                <span class="inv-cd-label">GSTIN</span>
+                <span id="vd-gstin" class="inv-cd-value">—</span>
+              </p>
+            </div>
+            <div class="col s12 m6">
+              <p class="inv-cd-field">
+                <span class="inv-cd-label">City</span>
+                <span id="vd-city" class="inv-cd-value">—</span>
+              </p>
+              <p class="inv-cd-field">
+                <span class="inv-cd-label">State · Pincode</span>
+                <span id="vd-state-pin" class="inv-cd-value">—</span>
+              </p>
+            </div>
+            <div class="col s12">
+              <p class="inv-cd-field">
+                <span class="inv-cd-label">Address</span>
+                <span id="vd-address" class="inv-cd-value">—</span>
+              </p>
+            </div>
+            <div class="col s12" id="vd-notes-wrap" style="display: none">
+              <p class="inv-cd-field">
+                <span class="inv-cd-label">Notes</span>
+                <span id="vd-notes" class="inv-cd-value"></span>
+              </p>
+            </div>
+          </div>
+        </div>
+
+        <div class="inv-content-card z-depth-1" id="vd-poc-card">
+          <h2 class="inv-preview-heading">Points of contact</h2>
+          <div class="inv-table-scroll">
+            <table class="inv-data-table">
+              <thead>
+                <tr>
+                  <th>Name</th>
+                  <th>Phone</th>
+                  <th>Role</th>
+                </tr>
+              </thead>
+              <tbody id="vd-poc-body"></tbody>
+            </table>
+          </div>
+        </div>
+
+        <div class="inv-content-card z-depth-1">
+          <h2 class="inv-preview-heading">Purchase lots</h2>
+          <p class="grey-text text-darken-1" style="margin: 0 0 0.75rem; font-size: 0.9rem">
+            Totals and paid amounts come from each lot record. Balance due is per-lot and rolled up in the summary above.
+          </p>
+          <div class="inv-table-scroll">
+            <table class="inv-data-table">
+              <thead>
+                <tr>
+                  <th>Lot #</th>
+                  <th>Delivered</th>
+                  <th class="right-align">Lines</th>
+                  <th class="right-align">Total</th>
+                  <th class="right-align">Paid</th>
+                  <th class="right-align">Balance</th>
+                  <th class="inv-th-actions">Open</th>
+                </tr>
+              </thead>
+              <tbody id="vd-lots-body"></tbody>
+            </table>
+          </div>
+        </div>
+
+        <p class="inv-disclaimer">Data is stored locally in this browser.</p>
+      </div>
+    </div>
+
+    <script src="js/marg-offline.js"></script>
+    <script src="vendor/js/jquery.min.js"></script>
+    <script src="vendor/js/underscore-min.js"></script>
+    <script src="vendor/js/backbone-min.js"></script>
+    <script src="vendor/js/materialize.min.js"></script>
+    <script src="vendor/js/sql-wasm.js"></script>
+    <script src="js/db.js"></script>
+    <script src="js/views/app-layout-view.js"></script>
+    <script src="js/global-search.js"></script>
+    <script src="js/marg-sync.js"></script>
+    <script src="js/vendor-detail-main.js"></script>
+  </body>
+</html>

@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="theme-color" content="#00897b" />
+    <link rel="manifest" href="manifest.json" />
+    <link rel="apple-touch-icon" href="icons/icon-192.png" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-title" content="Pharmacy ERP" />
+    <title>Pharmacy ERP — Prescriptions</title>
+    <link
+      rel="stylesheet"
+      href="vendor/css/materialize.min.css"
+    />
+    <link rel="stylesheet" href="vendor/css/fonts-local.css" />
+    <link rel="stylesheet" href="css/inventory.css" />
+  </head>
+  <body class="inv-app-body">
+    <div id="layout-root"></div>
+    <div id="page-fragment">
+      <div class="inv-main-column">
+        <div class="inv-content-card z-depth-1">
+          <header class="inv-panel-head">
+            <div class="inv-panel-head-text">
+              <h1 class="inv-panel-title">Prescriptions</h1>
+              <p class="inv-panel-subtitle">
+                Doctor-linked records per patient (customer). Lines hold status, type, and notes — internal notes stay
+                in the app.
+              </p>
+            </div>
+            <div class="inv-panel-head-actions">
+              <button type="button" id="btn-rx-csv-sample" class="btn waves-effect inv-btn-outline">
+                <i class="material-icons left">description</i>Sample CSV
+              </button>
+              <button type="button" id="btn-rx-csv-import" class="btn waves-effect inv-btn-outline">
+                <i class="material-icons left">upload_file</i>Import CSV
+              </button>
+              <input
+                type="file"
+                id="rx-csv-file"
+                accept=".csv,text/csv,text/plain"
+                class="hide"
+                aria-hidden="true"
+              />
+              <a href="prescription-edit.html" class="btn waves-effect inv-btn-primary" id="btn-rx-add">
+                <i class="material-icons left">add</i>Add prescription
+              </a>
+            </div>
+          </header>
+
+          <div class="inv-rx-filter-bar">
+            <div class="inv-search-wrap inv-rx-filter-search">
+              <i class="material-icons inv-search-icon" aria-hidden="true">search</i>
+              <input
+                id="rx-search"
+                type="search"
+                class="inv-search-input browser-default"
+                placeholder="Search doctor, patient, line notes…"
+                autocomplete="off"
+              />
+            </div>
+            <div class="inv-rx-filter-col">
+              <span class="inv-rx-filter-label" id="lbl-rx-customer">Customer</span>
+              <select id="rx-filter-customer" class="browser-default inv-rx-control" aria-labelledby="lbl-rx-customer">
+                <option value="">All customers</option>
+              </select>
+            </div>
+            <div class="inv-rx-filter-col inv-rx-filter-col--date">
+              <label class="inv-rx-filter-label" for="rx-date-from">From</label>
+              <input id="rx-date-from" type="date" class="browser-default inv-rx-control inv-rx-date" />
+            </div>
+            <div class="inv-rx-filter-col inv-rx-filter-col--date">
+              <label class="inv-rx-filter-label" for="rx-date-to">To</label>
+              <input id="rx-date-to" type="date" class="browser-default inv-rx-control inv-rx-date" />
+            </div>
+          </div>
+
+          <div class="inv-table-scroll">
+            <table class="inv-data-table">
+              <thead>
+                <tr>
+                  <th>Recorded</th>
+                  <th>Patient</th>
+                  <th>Doctor</th>
+                  <th class="right-align">Lines</th>
+                  <th class="inv-th-actions">Actions</th>
+                </tr>
+              </thead>
+              <tbody id="rx-table-body"></tbody>
+            </table>
+          </div>
+        </div>
+
+        <p class="inv-disclaimer">
+          Secret line notes are not included in dashboard search. Use Import &amp; export for Excel workbooks, or
+          <strong>Sample CSV / Import CSV</strong> in the header for comma-separated files.
+        </p>
+      </div>
+    </div>
+
+    <script src="js/marg-offline.js"></script>
+    <script src="vendor/js/jquery.min.js"></script>
+    <script src="vendor/js/underscore-min.js"></script>
+    <script src="vendor/js/backbone-min.js"></script>
+    <script src="vendor/js/materialize.min.js"></script>
+    <script src="vendor/js/sql-wasm.js"></script>
+    <script src="js/db.js"></script>
+    <script src="js/prescription-csv.js"></script>
+    <script src="js/views/app-layout-view.js"></script>
+    <script src="js/global-search.js"></script>
+    <script src="js/marg-sync.js"></script>
+    <script src="js/prescriptions-main.js"></script>
+  </body>
+</html>

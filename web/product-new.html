@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="theme-color" content="#00897b" />
+    <link rel="manifest" href="manifest.json" />
+    <link rel="apple-touch-icon" href="icons/icon-192.png" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-title" content="Pharmacy ERP" />
+    <title>Pharmacy ERP — Add product</title>
+    <link
+      rel="stylesheet"
+      href="vendor/css/materialize.min.css"
+    />
+    <link rel="stylesheet" href="vendor/css/fonts-local.css" />
+    <link rel="stylesheet" href="css/inventory.css" />
+  </head>
+  <body class="inv-app-body page-product-new">
+    <div id="layout-root"></div>
+    <div id="page-fragment">
+      <div class="inv-main-column">
+        <div class="inv-content-card z-depth-1">
+          <header class="inv-panel-head">
+            <div class="inv-panel-head-text">
+              <h1 class="inv-panel-title" id="pn-page-title">Add product</h1>
+              <p class="inv-panel-subtitle" id="pn-page-sub">
+                Medicine master data — pack structure and optional clinical notes.
+              </p>
+            </div>
+            <a href="inventory.html?panel=products" class="btn-flat inv-link-btn waves-effect" id="pn-back"
+              >Back to products</a
+            >
+          </header>
+
+          <form id="form-product-new">
+            <input type="hidden" id="pn-product-id" value="" />
+            <input type="hidden" id="pn-product-type-id" value="" />
+            <div class="row">
+              <div class="input-field col s12 pn-product-type-field">
+                <div class="pn-product-type-wrap">
+                  <input
+                    id="pn-product-type-search"
+                    type="text"
+                    autocomplete="off"
+                    placeholder="Search or type a new type…"
+                  />
+                  <label for="pn-product-type-search">Product type</label>
+                  <ul id="pn-product-type-dd" class="browser-default hide pn-product-type-dd" aria-hidden="true"></ul>
+                </div>
+              </div>
+              <div class="input-field col s12">
+                <input id="pn-name" type="text" required />
+                <label for="pn-name">Name *</label>
+              </div>
+              <div class="input-field col s12 m6">
+                <input id="pn-code" type="text" />
+                <label for="pn-code">Internal code</label>
+              </div>
+              <div class="input-field col s12 m6">
+                <input id="pn-barcode" type="text" />
+                <label for="pn-barcode">Barcode</label>
+              </div>
+              <div class="input-field col s12 m4">
+                <input id="pn-pack-label" type="text" placeholder="e.g. 1*15" />
+                <label for="pn-pack-label">Pack label</label>
+              </div>
+              <div class="input-field col s12 m4">
+                <input id="pn-strips" type="number" min="1" value="1" />
+                <label for="pn-strips">Strips per pack</label>
+              </div>
+              <div class="input-field col s12 m4">
+                <input id="pn-units" type="number" min="1" />
+                <label for="pn-units">Units per strip</label>
+              </div>
+              <div class="input-field col s12">
+                <textarea id="pn-desc" class="materialize-textarea"></textarea>
+                <label for="pn-desc">Description</label>
+              </div>
+              <div class="input-field col s12">
+                <textarea id="pn-composition" class="materialize-textarea"></textarea>
+                <label for="pn-composition">Chemical composition</label>
+              </div>
+              <div class="input-field col s12 m6">
+                <textarea id="pn-recommend" class="materialize-textarea"></textarea>
+                <label for="pn-recommend">General recommendation</label>
+              </div>
+              <div class="input-field col s12 m6">
+                <textarea id="pn-where" class="materialize-textarea"></textarea>
+                <label for="pn-where">Where to use</label>
+              </div>
+            </div>
+            <div class="inv-lot-new-actions" style="margin-top: 1.5rem; display: flex; flex-wrap: wrap; gap: 0.75rem">
+              <button type="submit" class="btn waves-effect inv-btn-primary" id="pn-submit">
+                <i class="material-icons left">save</i><span id="pn-submit-label">Save product</span>
+              </button>
+              <a href="inventory.html?panel=products" class="btn-flat waves-effect" id="pn-cancel">Cancel</a>
+            </div>
+          </form>
+        </div>
+
+        <p class="inv-disclaimer">Data is stored locally in this browser.</p>
+      </div>
+    </div>
+
+    <script src="js/marg-offline.js"></script>
+    <script src="vendor/js/jquery.min.js"></script>
+    <script src="vendor/js/underscore-min.js"></script>
+    <script src="vendor/js/backbone-min.js"></script>
+    <script src="vendor/js/materialize.min.js"></script>
+    <script src="vendor/js/sql-wasm.js"></script>
+    <script src="js/db.js"></script>
+    <script src="js/views/app-layout-view.js"></script>
+    <script src="js/global-search.js"></script>
+    <script src="js/marg-sync.js"></script>
+    <script src="js/product-new-main.js"></script>
+  </body>
+</html>

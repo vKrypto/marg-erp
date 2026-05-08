@@ -1,0 +1,153 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="theme-color" content="#00897b" />
+    <link rel="manifest" href="manifest.json" />
+    <link rel="apple-touch-icon" href="icons/icon-192.png" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-title" content="Pharmacy ERP" />
+    <title>Pharmacy ERP — Customers</title>
+    <link
+      rel="stylesheet"
+      href="vendor/css/materialize.min.css"
+    />
+    <link rel="stylesheet" href="vendor/css/fonts-local.css" />
+    <link rel="stylesheet" href="css/inventory.css" />
+  </head>
+  <body class="inv-app-body">
+    <div id="layout-root"></div>
+    <div id="page-fragment">
+      <div class="inv-main-column">
+        <div class="inv-content-card z-depth-1">
+          <header class="inv-panel-head">
+            <div class="inv-panel-head-text">
+              <h1 class="inv-panel-title">Customers</h1>
+              <p class="inv-panel-subtitle">
+                Patient and walk-in records — name, contact, and address for billing and orders.
+              </p>
+            </div>
+            <div class="inv-panel-head-actions">
+              <button type="button" id="btn-customer-csv-sample" class="btn waves-effect inv-btn-outline">
+                <i class="material-icons left">description</i>Sample CSV
+              </button>
+              <button type="button" id="btn-customer-csv-import" class="btn waves-effect inv-btn-outline">
+                <i class="material-icons left">upload_file</i>Import CSV
+              </button>
+              <input
+                type="file"
+                id="customer-csv-file"
+                accept=".csv,text/csv,text/plain"
+                class="hide"
+                aria-hidden="true"
+              />
+              <button type="button" id="btn-customer-add" class="btn waves-effect inv-btn-primary">
+                <i class="material-icons left">person_add</i>Add customer
+              </button>
+            </div>
+          </header>
+
+          <div class="inv-toolbar-row">
+            <div class="inv-search-wrap">
+              <i class="material-icons inv-search-icon" aria-hidden="true">search</i>
+              <input
+                id="customer-search"
+                type="search"
+                class="inv-search-input browser-default"
+                placeholder="Search by name, phone, email, city, or address…"
+                autocomplete="off"
+              />
+            </div>
+          </div>
+
+          <div class="inv-table-scroll">
+            <table class="inv-data-table">
+              <thead>
+                <tr>
+                  <th>Name</th>
+                  <th>Phone</th>
+                  <th>Email</th>
+                  <th>City</th>
+                  <th>Address</th>
+                  <th class="inv-th-actions">Actions</th>
+                </tr>
+              </thead>
+              <tbody id="customer-table-body"></tbody>
+            </table>
+          </div>
+        </div>
+
+        <p class="inv-disclaimer">
+          Customer data is stored only in this browser with your entity. Future orders will link here. Use Admin →
+          Import &amp; export for Excel workbooks, or <strong>Sample CSV / Import CSV</strong> in the header for
+          comma-separated files.
+        </p>
+      </div>
+    </div>
+
+    <div id="modal-customer" class="modal modal-fixed-footer">
+      <form id="form-customer">
+        <div class="modal-content">
+          <h4 id="modal-customer-title">Add customer</h4>
+          <input type="hidden" id="customer-id" value="" />
+          <div class="row">
+            <div class="input-field col s12">
+              <input id="cf-name" type="text" required autocomplete="name" />
+              <label for="cf-name">Name *</label>
+            </div>
+            <div class="input-field col s12 m6">
+              <input id="cf-phone" type="tel" autocomplete="tel" />
+              <label for="cf-phone">Phone</label>
+            </div>
+            <div class="input-field col s12 m6">
+              <input id="cf-email" type="email" autocomplete="email" />
+              <label for="cf-email">Email</label>
+            </div>
+            <div class="input-field col s12">
+              <input id="cf-address1" type="text" autocomplete="street-address" />
+              <label for="cf-address1">Address line 1</label>
+            </div>
+            <div class="input-field col s12">
+              <input id="cf-address2" type="text" />
+              <label for="cf-address2">Address line 2</label>
+            </div>
+            <div class="input-field col s12 m4">
+              <input id="cf-city" type="text" autocomplete="address-level2" />
+              <label for="cf-city">City</label>
+            </div>
+            <div class="input-field col s12 m4">
+              <input id="cf-state" type="text" autocomplete="address-level1" />
+              <label for="cf-state">State</label>
+            </div>
+            <div class="input-field col s12 m4">
+              <input id="cf-pincode" type="text" inputmode="numeric" autocomplete="postal-code" />
+              <label for="cf-pincode">Pincode</label>
+            </div>
+            <div class="input-field col s12">
+              <textarea id="cf-notes" class="materialize-textarea"></textarea>
+              <label for="cf-notes">Notes</label>
+            </div>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="modal-close btn-flat grey-text">Cancel</button>
+          <button type="submit" class="btn waves-effect waves-light teal darken-1">Save</button>
+        </div>
+      </form>
+    </div>
+
+    <script src="js/marg-offline.js"></script>
+    <script src="vendor/js/jquery.min.js"></script>
+    <script src="vendor/js/underscore-min.js"></script>
+    <script src="vendor/js/backbone-min.js"></script>
+    <script src="vendor/js/materialize.min.js"></script>
+    <script src="vendor/js/sql-wasm.js"></script>
+    <script src="js/db.js"></script>
+    <script src="js/inventory-csv.js"></script>
+    <script src="js/views/app-layout-view.js"></script>
+    <script src="js/global-search.js"></script>
+    <script src="js/marg-sync.js"></script>
+    <script src="js/customers-main.js"></script>
+  </body>
+</html>

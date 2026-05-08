@@ -1,0 +1,220 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="theme-color" content="#00897b" />
+    <link rel="manifest" href="manifest.json" />
+    <link rel="apple-touch-icon" href="icons/icon-192.png" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-title" content="Pharmacy ERP" />
+    <title>Pharmacy ERP — Login</title>
+    <link
+      rel="stylesheet"
+      href="vendor/css/materialize.min.css"
+    />
+    <link rel="stylesheet" href="vendor/css/fonts-local.css" />
+    <link rel="stylesheet" href="css/login.css" />
+  </head>
+  <body>
+    <div id="inv-offline-banner" class="inv-offline-banner inv-offline-banner--login" role="status" aria-live="polite" hidden>
+      <i class="material-icons" aria-hidden="true">wifi_off</i>
+      <span>You’re offline — you can still use saved data in this browser.</span>
+    </div>
+    <input
+      type="file"
+      id="marg-excel-import-file"
+      accept=".xlsx,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+      class="hidden"
+      aria-hidden="true"
+    />
+
+    <div class="login-container">
+      <div class="container">
+        <div class="row">
+          <div class="col s12 m8 offset-m2 l6 offset-l3">
+            <div class="brand-logo-area center-align">
+              <div class="erp-brand-icon-box erp-brand-icon-box--lg">
+                <i class="material-icons" aria-hidden="true">local_pharmacy</i>
+              </div>
+              <h4 class="erp-brand-heading grey-text text-darken-4" style="margin-top: 1rem">
+                <span class="erp-brand-word">Pharmacy</span> <span class="erp-brand-word-erp">ERP</span>
+              </h4>
+              <p class="grey-text text-darken-1">
+                <i class="material-icons tiny teal-text text-darken-1" style="vertical-align: middle"
+                  >lock</i
+                >
+                Offline-first — your data stays in this browser.
+              </p>
+            </div>
+
+            <div class="card z-depth-2 login-card">
+              <div class="card-content">
+                <div id="state-a">
+                  <span class="card-title grey-text text-darken-4" style="font-weight: 500"
+                    >Start session</span
+                  >
+                  <p class="grey-text" style="margin-bottom: 2rem">
+                    Enter your shop / entity name to create a local session (no server sign-in).
+                  </p>
+
+                  <div class="row">
+                    <div class="input-field col s12">
+                      <input id="entity_name" type="text" class="validate" required autocomplete="off" />
+                      <label for="entity_name">Entity name (e.g. LifeCare Pharmacy)</label>
+                      <span class="helper-text" data-error="Entity name is required"></span>
+                    </div>
+                  </div>
+
+                  <button
+                    id="btn-continue"
+                    type="button"
+                    class="btn waves-effect waves-light teal darken-1"
+                    style="width: 100%; height: 50px; border-radius: 8px; font-weight: 600; margin-bottom: 1rem"
+                  >
+                    Continue
+                  </button>
+                </div>
+
+                <div id="state-b" class="hidden">
+                  <div
+                    style="
+                      display: flex;
+                      justify-content: space-between;
+                      align-items: center;
+                      margin-bottom: 1.5rem;
+                    "
+                  >
+                    <span class="card-title grey-text text-darken-4" style="font-weight: 500; margin: 0"
+                      >Open as entity</span
+                    >
+                    <a href="#" id="btn-new-entity" class="teal-text text-darken-1" style="font-weight: 700; font-size: 0.8rem; text-transform: uppercase"
+                      >+ Create new</a
+                    >
+                  </div>
+
+                  <ul id="entity-list" class="collection" style="border: none; border-radius: 8px; overflow: hidden; margin-bottom: 2rem"></ul>
+                </div>
+
+                <div class="login-data-hub" id="login-data-hub">
+                  <div class="divider login-data-hub-divider"></div>
+                  <p class="login-data-hub-kicker grey-text text-darken-1">Bring data in</p>
+
+                  <div class="login-acc">
+                    <button
+                      type="button"
+                      class="login-acc-trigger"
+                      id="btn-toggle-excel"
+                      aria-expanded="false"
+                      aria-controls="login-import-excel-panel"
+                    >
+                      <span class="login-acc-trigger-main">
+                        <i class="material-icons login-acc-trigger-icon" aria-hidden="true">upload_file</i>
+                        <span>Import from Excel</span>
+                      </span>
+                      <i class="material-icons login-acc-chevron" aria-hidden="true">expand_more</i>
+                    </button>
+                    <div id="login-import-excel-panel" class="login-acc-panel hidden" role="region" aria-labelledby="btn-toggle-excel">
+                      <p class="grey-text text-darken-1 login-acc-hint">
+                        Same workbook format as Admin → Import &amp; export (.xlsx). Creates “Imported pharmacy” if you have no entity yet.
+                      </p>
+                      <button
+                        id="btn-import-trigger"
+                        type="button"
+                        class="btn waves-effect waves-light teal darken-1 login-acc-primary-btn"
+                      >
+                        <i class="material-icons left">folder_open</i>
+                        Choose Excel file
+                      </button>
+                    </div>
+                  </div>
+
+                  <div class="login-acc">
+                    <button
+                      type="button"
+                      class="login-acc-trigger"
+                      id="btn-toggle-server"
+                      aria-expanded="false"
+                      aria-controls="login-server-restore"
+                    >
+                      <span class="login-acc-trigger-main">
+                        <i class="material-icons login-acc-trigger-icon" aria-hidden="true">cloud</i>
+                        <span>Connect to server</span>
+                      </span>
+                      <i class="material-icons login-acc-chevron" aria-hidden="true">expand_more</i>
+                    </button>
+                    <div id="login-server-restore" class="login-acc-panel login-server-restore hidden" role="region" aria-labelledby="btn-toggle-server">
+                      <p class="grey-text text-darken-1 login-acc-hint">
+                        <strong>Restore from sync server</strong> — downloads the backup from your Node server. Use the same username/password as
+                        <code>SYNC_USER</code> / <code>SYNC_PASS</code> (defaults <code>admin</code> / <code>changeme</code>). Replaces
+                        <em>all</em> data in this browser.
+                      </p>
+                      <div class="row" style="margin-bottom: 0">
+                        <div class="input-field col s12" style="margin-top: 0.75rem">
+                          <input
+                            id="login-sync-url"
+                            type="url"
+                            placeholder="http://127.0.0.1:3847"
+                            autocomplete="off"
+                          />
+                          <label for="login-sync-url">Server base URL</label>
+                        </div>
+                        <div class="input-field col s12 m6" style="margin-top: 0.5rem">
+                          <input id="login-sync-user" type="text" autocomplete="username" placeholder="e.g. admin" />
+                          <label for="login-sync-user">Username</label>
+                        </div>
+                        <div class="input-field col s12 m6" style="margin-top: 0.5rem">
+                          <input id="login-sync-pass" type="password" autocomplete="current-password" placeholder="e.g. changeme" />
+                          <label for="login-sync-pass">Password</label>
+                        </div>
+                      </div>
+                      <button
+                        id="btn-server-restore"
+                        type="button"
+                        class="btn waves-effect waves-light teal lighten-1 login-acc-primary-btn"
+                      >
+                        <i class="material-icons left">cloud_download</i>
+                        Restore from server
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              </div>
+              <div
+                class="card-action grey lighten-4"
+                style="border-bottom-left-radius: 12px; border-bottom-right-radius: 12px"
+              >
+                <div class="row mb-0" style="margin-bottom: 0">
+                  <div class="col s12" style="display: flex; align-items: center">
+                    <i class="material-icons grey-text" style="margin-right: 10px">storage</i>
+                    <span class="grey-text" style="font-size: 0.7rem; font-weight: 700; text-transform: uppercase; letter-spacing: 1px"
+                      >Local SQLite (sql.js)</span
+                    >
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <footer class="center-align">
+              <p class="helper-text-small" style="max-width: 350px; margin: 0 auto 1.5rem auto; line-height: 1.5">
+                Data stays in this browser. Use the same Excel workbook as Admin → Import &amp; export (vendors, products, customers, prescriptions, orders, lots).
+              </p>
+            </footer>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <script src="js/marg-offline.js"></script>
+    <script src="vendor/js/jquery.min.js"></script>
+    <script src="vendor/js/underscore-min.js"></script>
+    <script src="vendor/js/backbone-min.js"></script>
+    <script src="vendor/js/materialize.min.js"></script>
+    <script src="vendor/js/sql-wasm.js"></script>
+    <script src="vendor/js/xlsx.full.min.js"></script>
+    <script src="js/inventory-excel.js"></script>
+    <script src="js/db.js"></script>
+    <script src="js/views/login-view.js"></script>
+    <script src="js/index.js"></script>
+  </body>
+</html>

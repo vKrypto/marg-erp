@@ -1,0 +1,63 @@
+/* Pharmacy ERP — shared logo mark (login + app shell + print footers) */
+
+.erp-brand-icon-box {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  background-color: #00897b;
+  color: #fff;
+  box-shadow: 0 4px 10px rgba(0, 137, 123, 0.3);
+}
+
+.erp-brand-icon-box .material-icons {
+  color: #fff;
+}
+
+/* Login / marketing hero */
+.erp-brand-icon-box--lg {
+  width: 64px;
+  height: 64px;
+  border-radius: 16px;
+}
+
+.erp-brand-icon-box--lg .material-icons {
+  font-size: 36px;
+}
+
+/* App sidebar */
+.erp-brand-icon-box--sm {
+  width: 44px;
+  height: 44px;
+  border-radius: 12px;
+}
+
+.erp-brand-icon-box--sm .material-icons {
+  font-size: 22px;
+}
+
+/* Mobile app bar — compact mark */
+.erp-brand-icon-box--xs {
+  width: 32px;
+  height: 32px;
+  border-radius: 10px;
+}
+
+.erp-brand-icon-box--xs .material-icons {
+  font-size: 18px;
+}
+
+.erp-brand-word {
+  color: #212121;
+}
+
+.erp-brand-word-erp {
+  color: #00897b;
+}
+
+.erp-brand-heading {
+  font-weight: 700;
+  margin: 0;
+  line-height: 1.2;
+  color: #212121;
+}

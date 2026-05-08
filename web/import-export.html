@@ -1,0 +1,198 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="theme-color" content="#00897b" />
+    <link rel="manifest" href="manifest.json" />
+    <link rel="apple-touch-icon" href="icons/icon-192.png" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-title" content="Pharmacy ERP" />
+    <title>Pharmacy ERP — Import & export</title>
+    <link
+      rel="stylesheet"
+      href="vendor/css/materialize.min.css"
+    />
+    <link rel="stylesheet" href="vendor/css/fonts-local.css" />
+    <link rel="stylesheet" href="css/inventory.css" />
+  </head>
+  <body class="inv-app-body">
+    <div id="layout-root"></div>
+    <div id="page-fragment">
+      <div class="inv-main-column">
+        <div class="inv-content-card z-depth-1 inv-content-card--import-export">
+          <header class="inv-panel-head">
+            <div class="inv-panel-head-text">
+              <h1 class="inv-panel-title">Import & export</h1>
+              <p class="inv-panel-subtitle">
+                Download the current entity as an Excel workbook, or load / restore data from a file. By default new
+                rows on import are <strong>appended</strong>. For a full replace, use <strong>Full backup import</strong>
+                below to clear existing products, customers, prescriptions, orders, and lots first.
+              </p>
+            </div>
+            <div class="inv-panel-head-actions">
+              <button type="button" id="btn-export-excel" class="btn inv-btn-outline waves-effect">
+                <i class="material-icons left">download</i>Export Excel
+              </button>
+              <button type="button" id="btn-import-excel" class="btn inv-btn-outline waves-effect">
+                <i class="material-icons left">upload_file</i>Import Excel
+              </button>
+              <button type="button" id="btn-download-sample-excel" class="btn-flat inv-link-btn waves-effect">
+                Sample workbook
+              </button>
+              <input
+                type="file"
+                id="entity-excel-file"
+                accept=".xlsx,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+                class="hide"
+                aria-hidden="true"
+              />
+            </div>
+          </header>
+
+          <div class="inv-ie-full-replace">
+            <label class="inv-ie-full-replace-label" for="inv-import-full-replace">
+              <input type="checkbox" id="inv-import-full-replace" class="inv-ie-full-replace-input" />
+              <span class="inv-ie-full-replace-text">
+                <strong>Full backup import</strong> — treat this file as a complete export for this entity.
+              </span>
+            </label>
+
+            <span class="inv-ie-full-replace-hint grey-text text-darken-2">
+              When checked, all existing <strong>products, vendors, customers, prescriptions, sales orders, and purchase lots</strong>
+              for this entity are removed before importing the workbook. Rows are then imported; if the file includes an
+              <code>Entity</code> sheet with data, shop profile + <code>invoice_format_json</code> + terms are merged in after.
+            </span>
+          </div>
+
+          <p class="inv-help-line">
+            Use one file with optional sheets (each with a header row). The <code>Entity</code> sheet (one data row) carries
+            shop name, address, reorder/alert levels, <code>accepted_payments_json</code>, <code>invoice_format_json</code>, and
+            <code>terms_and_conditions</code> for round-trip. The <code>CommonDetails</code> sheet adds a
+            <strong>json_snapshot</strong> row (full JSON) plus human-readable entity fields and a staff table — extended
+            profile + staff merge after transactional data. Money columns use <strong>INR</strong> where noted. Import order:
+            vendors → products → customers →
+            <code>Prescriptions</code> + <code>PrescriptionLines</code> →
+            <code>Orders</code> + <code>OrderLines</code> → lots (with <code>LotLines</code>); then the
+            <code>Entity</code> row (if present), then <code>CommonDetails</code> (if present), then <code>Staff</code> (if present;
+            staff in the Staff sheet overrides duplicate rows from older CommonDetails JSON).
+          </p>
+
+          <div class="inv-ie-sheet-grid">
+            <div class="inv-ie-sheet-card">
+              <h3 class="inv-ie-sheet-title"><code>Entity</code></h3>
+              <div class="inv-ie-sheet-count" aria-live="polite">
+                <span class="inv-ie-sheet-count-num">1 row</span>
+                <span class="inv-ie-sheet-count-label">per export</span>
+              </div>
+              <p class="inv-ie-sheet-desc">
+                Shop profile + invoice format state + terms. Merged into the current session on import (duplicate shop names in
+                the same browser are rejected).
+              </p>
+            </div>
+            <div class="inv-ie-sheet-card">
+              <h3 class="inv-ie-sheet-title"><code>Staff</code></h3>
+              <div class="inv-ie-sheet-count" aria-live="polite">
+                <span class="inv-ie-sheet-count-num">1 row each</span>
+                <span class="inv-ie-sheet-count-label">per person</span>
+              </div>
+              <p class="inv-ie-sheet-desc">
+                Columns: <code>id</code>, <code>name</code>, <code>email</code>, <code>phone</code>, <code>role</code> (admin or staff),
+                <code>created_at</code>, <code>updated_at</code>. Applied after CommonDetails; leave <code>id</code> blank for new users.
+              </p>
+            </div>
+            <div class="inv-ie-sheet-card">
+              <h3 class="inv-ie-sheet-title"><code>CommonDetails</code></h3>
+              <div class="inv-ie-sheet-count" aria-live="polite">
+                <span class="inv-ie-sheet-count-num">JSON + table</span>
+                <span class="inv-ie-sheet-count-label">per export</span>
+              </div>
+              <p class="inv-ie-sheet-desc">
+                Row <code>json_snapshot</code> holds entity profile JSON (same fields as the Entity sheet, for quick round-trip).
+                Human-readable key/value below. Staff is on the <code>Staff</code> sheet only; older files may still include
+                <code>staff</code> in JSON and those rows are merged too.
+              </p>
+            </div>
+            <div class="inv-ie-sheet-card">
+              <h3 class="inv-ie-sheet-title"><code>Products</code></h3>
+              <div class="inv-ie-sheet-count" aria-live="polite">
+                <span class="inv-ie-sheet-count-num" id="count-products">—</span>
+                <span class="inv-ie-sheet-count-label">in database</span>
+              </div>
+              <p class="inv-ie-sheet-desc">Medicine master: name, code, pack, composition, etc.</p>
+            </div>
+            <div class="inv-ie-sheet-card">
+              <h3 class="inv-ie-sheet-title"><code>Vendors</code></h3>
+              <div class="inv-ie-sheet-count" aria-live="polite">
+                <span class="inv-ie-sheet-count-num" id="count-vendors">—</span>
+                <span class="inv-ie-sheet-count-label">in database</span>
+              </div>
+              <p class="inv-ie-sheet-desc">Suppliers: name, phone, GSTIN, address…</p>
+            </div>
+            <div class="inv-ie-sheet-card">
+              <h3 class="inv-ie-sheet-title"><code>Customers</code></h3>
+              <div class="inv-ie-sheet-count" aria-live="polite">
+                <span class="inv-ie-sheet-count-num" id="count-customers">—</span>
+                <span class="inv-ie-sheet-count-label">in database</span>
+              </div>
+              <p class="inv-ie-sheet-desc">
+                Patients / walk-ins: name, phone, email, address lines, city, state, pincode, notes — use this
+                sheet to <strong>restore</strong> or bulk-add customers.
+              </p>
+            </div>
+            <div class="inv-ie-sheet-card">
+              <h3 class="inv-ie-sheet-title"><code>Prescriptions</code> + <code>PrescriptionLines</code></h3>
+              <div class="inv-ie-sheet-count" aria-live="polite">
+                <span class="inv-ie-sheet-count-num" id="count-prescriptions">—</span>
+                <span class="inv-ie-sheet-count-label">prescriptions</span>
+              </div>
+              <p class="inv-ie-sheet-desc">
+                Hospital-style scripts: header keyed by <code>rx_key</code>, patient by name/phone, plus one row per
+                line (status, type, notes, secret notes). Requires customers in the DB or on the same file.
+              </p>
+            </div>
+            <div class="inv-ie-sheet-card">
+              <h3 class="inv-ie-sheet-title"><code>Orders</code> + <code>OrderLines</code></h3>
+              <div class="inv-ie-sheet-count" aria-live="polite">
+                <span class="inv-ie-sheet-count-num" id="count-orders">—</span>
+                <span class="inv-ie-sheet-count-label">sales orders</span>
+              </div>
+              <p class="inv-ie-sheet-desc">
+                Order header (customer, date, discount, status) plus one row per line (product, qty, line total in
+                INR, dosing flags). Requires customers and products in the same file or already in the DB.
+              </p>
+            </div>
+            <div class="inv-ie-sheet-card">
+              <h3 class="inv-ie-sheet-title"><code>Lots</code> + <code>LotLines</code></h3>
+              <div class="inv-ie-sheet-count" aria-live="polite">
+                <span class="inv-ie-sheet-count-num" id="count-lots">—</span>
+                <span class="inv-ie-sheet-count-label">purchase lots</span>
+              </div>
+              <p class="inv-ie-sheet-desc">Purchase lots and line items (products must exist or be on the same file).</p>
+            </div>
+          </div>
+        </div>
+
+        <p class="inv-disclaimer">
+          The login screen uses the same Excel workbook format; from there, rows are merged into the session you open.
+          On this page you can optionally use <strong>Full backup import</strong> to replace all entity data. Export from
+          one browser and import on another to move data between devices.
+        </p>
+      </div>
+    </div>
+
+    <script src="js/marg-offline.js"></script>
+    <script src="vendor/js/jquery.min.js"></script>
+    <script src="vendor/js/underscore-min.js"></script>
+    <script src="vendor/js/backbone-min.js"></script>
+    <script src="vendor/js/materialize.min.js"></script>
+    <script src="vendor/js/sql-wasm.js"></script>
+    <script src="js/db.js"></script>
+    <script src="vendor/js/xlsx.full.min.js"></script>
+    <script src="js/inventory-excel.js"></script>
+    <script src="js/views/app-layout-view.js"></script>
+    <script src="js/global-search.js"></script>
+    <script src="js/marg-sync.js"></script>
+    <script src="js/import-export-main.js"></script>
+  </body>
+</html>

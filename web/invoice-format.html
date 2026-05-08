@@ -1,0 +1,263 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="theme-color" content="#00897b" />
+    <link rel="manifest" href="manifest.json" />
+    <link rel="apple-touch-icon" href="icons/icon-192.png" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-title" content="Pharmacy ERP" />
+    <title>Pharmacy ERP — Invoice format</title>
+    <link
+      rel="stylesheet"
+      href="vendor/css/materialize.min.css"
+    />
+    <link rel="stylesheet" href="vendor/css/fonts-local.css" />
+    <link rel="stylesheet" href="css/inventory.css" />
+  </head>
+  <body class="inv-app-body">
+    <div id="layout-root"></div>
+    <div id="page-fragment">
+      <div class="inv-main-column">
+        <div class="inv-content-card z-depth-1">
+          <header class="inv-panel-head">
+            <div class="inv-panel-head-text">
+              <h1 class="inv-panel-title">Invoice format &amp; design</h1>
+              <p class="inv-panel-subtitle">
+                Choose a <strong>sample</strong> (built-in or your own): it sets the <strong>active invoice design</strong>
+                (visual theme + which fields print). Browse previews on
+                <a href="invoice-samples.html">Invoice samples</a>. Custom designs are stored per entity in this browser’s database.
+                Pair with <a href="terms.html">Terms &amp; conditions</a> for legal copy.
+              </p>
+            </div>
+            <div class="inv-panel-head-actions" style="flex-wrap: wrap; gap: 0.5rem">
+              <button type="button" id="btn-reset-invoice-format" class="btn-flat waves-effect">
+                Reset to defaults
+              </button>
+            </div>
+          </header>
+
+          <div class="inv-invoice-format-toolbar row">
+            <div class="col s12">
+              <label for="inv-fmt-format-select" class="inv-fmt-select-label">Active sample (used for all invoice prints)</label>
+              <select id="inv-fmt-format-select" class="browser-default inv-fmt-format-select" aria-describedby="inv-fmt-format-hint"></select>
+              <p id="inv-fmt-format-hint" class="inv-fmt-format-hint grey-text text-darken-1">
+                Changing the selection loads that format and sets it as the one used for new prints.
+              </p>
+            </div>
+          </div>
+          <p class="inv-fmt-builtin-hint grey-text text-darken-1" id="inv-fmt-builtin-hint" style="display: none">
+            Built-in samples cannot be overwritten. Change options or visual design and use <strong>Save as new format</strong> to store a
+            custom copy, or switch to one of your formats and use <strong>Save</strong>.
+          </p>
+
+          <div class="inv-invoice-format-layout">
+            <div class="row">
+              <div class="col s12 inv-invoice-format-options">
+          <div class="row inv-invoice-format-form">
+            <div class="input-field col s12">
+              <input type="text" id="inv-fmt-document-title" autocomplete="off" />
+              <label for="inv-fmt-document-title">Document title (printed heading)</label>
+            </div>
+          </div>
+
+          <div class="inv-fmt-classic-panel">
+            <h3 class="inv-fmt-classic-panel-title">Print layout</h3>
+          <div class="row inv-invoice-design-row">
+            <div class="col s12 m6 l4">
+              <span class="inv-fmt-select-label">Visual design (printed invoice)</span>
+              <input type="hidden" id="inv-fmt-design-template" value="gst" />
+              <p class="inv-fmt-design-locked" aria-hidden="true">
+                GST pharmacy grid — patient meta, pack / batch / MRP table
+              </p>
+              <p id="inv-fmt-design-hint" class="inv-fmt-format-hint grey-text text-darken-1">
+                Single layout for this app. Colours, paper, and content options below are saved with your active sample.
+              </p>
+            </div>
+            <div class="col s12 m6 l4">
+              <label for="inv-fmt-print-color-mode" class="inv-fmt-select-label">Print output</label>
+              <select id="inv-fmt-print-color-mode" class="browser-default inv-fmt-format-select" aria-describedby="inv-fmt-print-color-hint">
+                <option value="color">Full color</option>
+                <option value="grayscale">Black &amp; white (grayscale)</option>
+              </select>
+              <p id="inv-fmt-print-color-hint" class="inv-fmt-format-hint grey-text text-darken-1">
+                Grayscale is best for saving ink; preview matches print. Saved with your format.
+              </p>
+            </div>
+            <div class="col s12 m6 l4">
+              <label for="inv-fmt-paper-size" class="inv-fmt-select-label">Print paper size</label>
+              <select id="inv-fmt-paper-size" class="browser-default inv-fmt-format-select" aria-describedby="inv-fmt-paper-hint">
+                <option value="a4">A4 — 210 × 297 mm (ISO)</option>
+                <option value="letter">US Letter — 8.5 × 11 in</option>
+                <option value="a5">A5 — 148 × 210 mm</option>
+                <option value="custom">Custom — width × height (mm)</option>
+              </select>
+              <p id="inv-fmt-paper-hint" class="inv-fmt-format-hint grey-text text-darken-1">
+                Used for browser print (<code>@page</code>); default is A4. Saved with your format.
+              </p>
+            </div>
+          </div>
+
+          <div class="row inv-invoice-paper-custom-row" id="inv-fmt-paper-custom-wrap" style="display: none">
+            <div class="col s6 m3 l2">
+              <label for="inv-fmt-paper-width-mm" class="inv-fmt-select-label">Width (mm)</label>
+              <input
+                type="number"
+                id="inv-fmt-paper-width-mm"
+                class="browser-default inv-fmt-paper-mm-input"
+                min="80"
+                max="500"
+                step="1"
+                inputmode="numeric"
+                aria-describedby="inv-fmt-paper-custom-hint"
+              />
+            </div>
+            <div class="col s6 m3 l2">
+              <label for="inv-fmt-paper-height-mm" class="inv-fmt-select-label">Height (mm)</label>
+              <input
+                type="number"
+                id="inv-fmt-paper-height-mm"
+                class="browser-default inv-fmt-paper-mm-input"
+                min="80"
+                max="500"
+                step="1"
+                inputmode="numeric"
+                aria-describedby="inv-fmt-paper-custom-hint"
+              />
+            </div>
+            <div class="col s12 m6">
+              <p id="inv-fmt-paper-custom-hint" class="inv-fmt-format-hint grey-text text-darken-1" style="margin-top: 0">
+                Custom page uses CSS <code>size: Wmm Hmm</code> (80–500 mm each). Typical: A4 = 210 × 297.
+              </p>
+            </div>
+          </div>
+          </div>
+
+          <fieldset class="inv-fmt-classic-fieldset">
+            <legend>Invoice content</legend>
+            <p class="inv-fmt-classic-fieldset-hint">
+              Tick <strong>Show</strong> to include each item on the printed invoice (same as before: checked = show, unchecked = hide).
+            </p>
+            <div class="inv-fmt-classic-table-wrap">
+              <table class="inv-fmt-classic-table">
+                <thead>
+                  <tr>
+                    <th scope="col">Option</th>
+                    <th scope="col" class="inv-fmt-classic-th-show">Show</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <td>Bill to (customer block)</td>
+                    <td class="inv-fmt-classic-td-check"><input type="checkbox" id="inv-fmt-show-bill-to" /></td>
+                  </tr>
+                  <tr>
+                    <td>Summary box</td>
+                    <td class="inv-fmt-classic-td-check"><input type="checkbox" id="inv-fmt-show-summary" /></td>
+                  </tr>
+                  <tr>
+                    <td>Dose / schedule on line items</td>
+                    <td class="inv-fmt-classic-td-check"><input type="checkbox" id="inv-fmt-show-schedule" /></td>
+                  </tr>
+                  <tr>
+                    <td>Product code (SKU) next to name</td>
+                    <td class="inv-fmt-classic-td-check"><input type="checkbox" id="inv-fmt-show-product-code" /></td>
+                  </tr>
+                  <tr>
+                    <td>Line notes (per product row)</td>
+                    <td class="inv-fmt-classic-td-check"><input type="checkbox" id="inv-fmt-show-line-notes" /></td>
+                  </tr>
+                  <tr>
+                    <td>Order status (draft / confirmed) in header</td>
+                    <td class="inv-fmt-classic-td-check"><input type="checkbox" id="inv-fmt-show-status" /></td>
+                  </tr>
+                  <tr>
+                    <td>Order notes</td>
+                    <td class="inv-fmt-classic-td-check"><input type="checkbox" id="inv-fmt-show-notes" /></td>
+                  </tr>
+                  <tr>
+                    <td>Terms &amp; conditions</td>
+                    <td class="inv-fmt-classic-td-check"><input type="checkbox" id="inv-fmt-show-terms" /></td>
+                  </tr>
+                  <tr>
+                    <td>Shop phone on header</td>
+                    <td class="inv-fmt-classic-td-check"><input type="checkbox" id="inv-fmt-show-phone" /></td>
+                  </tr>
+                  <tr>
+                    <td>Shop GSTIN on header</td>
+                    <td class="inv-fmt-classic-td-check"><input type="checkbox" id="inv-fmt-show-gstin" /></td>
+                  </tr>
+                  <tr>
+                    <td>Shop DL on header</td>
+                    <td class="inv-fmt-classic-td-check"><input type="checkbox" id="inv-fmt-show-dl" /></td>
+                  </tr>
+                  <tr>
+                    <td>QR code (GST pharmacy layout)</td>
+                    <td class="inv-fmt-classic-td-check"><input type="checkbox" id="inv-fmt-show-qr" /></td>
+                  </tr>
+                  <tr>
+                    <td>Generated disclaimer footer</td>
+                    <td class="inv-fmt-classic-td-check"><input type="checkbox" id="inv-fmt-show-gen-footer" /></td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </fieldset>
+
+          <div class="input-field inv-fmt-custom-footer-wrap">
+            <textarea id="inv-fmt-custom-footer" class="materialize-textarea" rows="2" placeholder="Optional extra line below the footer"></textarea>
+            <label for="inv-fmt-custom-footer">Custom footer line (optional)</label>
+          </div>
+
+          <div class="inv-fmt-form-actions">
+            <button type="button" id="btn-inv-fmt-save-as-new" class="btn-flat waves-effect">
+              Save as new format
+            </button>
+            <button type="button" id="btn-inv-fmt-delete" class="btn-flat waves-effect inv-fmt-delete-btn" style="display: none">
+              Delete format
+            </button>
+            <button type="button" id="btn-save-invoice-format" class="btn waves-effect inv-btn-primary" disabled>
+              <i class="material-icons left">save</i><span id="btn-save-invoice-format-label">Save</span>
+            </button>
+          </div>
+              </div>
+            </div>
+
+            <div class="row inv-invoice-format-preview-row">
+              <div class="col s12 inv-invoice-format-preview">
+              <div class="inv-preview-panel">
+                <h2 class="inv-preview-heading">Preview</h2>
+                <p class="grey-text text-darken-1 inv-preview-hint">
+                  Preview uses your <strong>latest order</strong> when one exists (real customer &amp; lines); otherwise a sample.
+                  Updates as you change options (save with Save or Save as new).
+                </p>
+                <iframe
+                  id="invoice-preview-frame"
+                  class="inv-invoice-preview-frame"
+                  title="Invoice preview"
+                ></iframe>
+              </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <script src="js/marg-offline.js"></script>
+    <script src="vendor/js/jquery.min.js"></script>
+    <script src="vendor/js/underscore-min.js"></script>
+    <script src="vendor/js/backbone-min.js"></script>
+    <script src="vendor/js/materialize.min.js"></script>
+    <script src="vendor/js/sql-wasm.js"></script>
+    <script src="js/terms-defaults.js"></script>
+    <script src="js/invoice-format-defaults.js"></script>
+    <script src="js/invoice-html.js"></script>
+    <script src="js/db.js"></script>
+    <script src="js/views/app-layout-view.js"></script>
+    <script src="js/global-search.js"></script>
+    <script src="js/marg-sync.js"></script>
+    <script src="js/invoice-format-main.js"></script>
+  </body>
+</html>

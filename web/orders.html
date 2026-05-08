@@ -1,0 +1,279 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="theme-color" content="#00897b" />
+    <link rel="manifest" href="manifest.json" />
+    <link rel="apple-touch-icon" href="icons/icon-192.png" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-title" content="Pharmacy ERP" />
+    <title>Pharmacy ERP — Orders</title>
+    <link
+      rel="stylesheet"
+      href="vendor/css/materialize.min.css"
+    />
+    <link rel="stylesheet" href="vendor/css/fonts-local.css" />
+    <link rel="stylesheet" href="css/inventory.css?v=7" />
+  </head>
+  <body class="inv-app-body">
+    <div id="layout-root"></div>
+    <div id="page-fragment">
+      <div class="inv-main-column">
+        <!-- List -->
+        <div id="panel-order-list" class="inv-content-card z-depth-1">
+          <header class="inv-panel-head">
+            <div class="inv-panel-head-text">
+              <h1 class="inv-panel-title">Orders</h1>
+              <p class="inv-panel-subtitle">
+                Sales orders with line totals (paise) and per-line dosing schedule — morning / noon / evening / night.
+              </p>
+            </div>
+            <button type="button" id="btn-new-order" class="btn waves-effect inv-btn-primary">
+              <i class="material-icons left">add_shopping_cart</i>New order
+            </button>
+          </header>
+
+          <div class="inv-toolbar-row inv-order-toolbar">
+            <div class="inv-filter-field">
+              <label class="inv-filter-label" for="order-filter-from">From</label>
+              <input type="date" id="order-filter-from" class="browser-default inv-filter-date-input" />
+            </div>
+            <div class="inv-filter-field">
+              <label class="inv-filter-label" for="order-filter-to">To</label>
+              <input type="date" id="order-filter-to" class="browser-default inv-filter-date-input" />
+            </div>
+            <div class="inv-search-wrap inv-order-search">
+              <i class="material-icons inv-search-icon" aria-hidden="true">search</i>
+              <input
+                id="order-search"
+                type="search"
+                class="inv-search-input browser-default"
+                placeholder="Customer, phone, or order #…"
+                autocomplete="off"
+              />
+            </div>
+            <button type="button" id="btn-order-filter" class="btn-flat waves-effect inv-order-apply">Apply</button>
+          </div>
+
+          <div class="inv-table-scroll">
+            <table class="inv-data-table">
+              <thead>
+                <tr>
+                  <th>Date</th>
+                  <th>Order #</th>
+                  <th>Customer</th>
+                  <th>Total</th>
+                  <th>Status</th>
+                  <th class="inv-th-actions">Actions</th>
+                </tr>
+              </thead>
+              <tbody id="order-table-body"></tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- Editor -->
+        <div id="panel-order-editor" class="inv-content-card z-depth-1 hide">
+          <header class="inv-panel-head">
+            <div class="inv-panel-head-text">
+              <h2 class="inv-panel-title" id="order-editor-title">New order</h2>
+              <p class="inv-panel-subtitle" id="order-editor-sub">
+                Draft — line totals from tabs × latest strip price; header discount applies after line subtotal.
+              </p>
+            </div>
+            <div class="inv-panel-head-actions" style="flex-wrap: wrap; gap: 0.5rem">
+              <button type="button" id="btn-back-to-list" class="btn-flat inv-link-btn waves-effect">Back to list</button>
+              <button type="button" id="btn-print-invoice" class="btn-flat waves-effect">
+                <i class="material-icons left">print</i>Print invoice
+              </button>
+              <button type="button" id="btn-save-draft" class="btn waves-effect inv-btn-primary">Save draft</button>
+              <button type="button" id="btn-confirm-order" class="btn waves-effect teal darken-1">
+                <i class="material-icons left">check</i>Confirm
+              </button>
+              <button type="button" id="btn-cancel-order" class="btn-flat waves-effect">Mark cancelled</button>
+              <button type="button" id="btn-delete-order" class="btn-flat red-text">Delete</button>
+            </div>
+          </header>
+
+          <input type="hidden" id="order-editor-id" value="" />
+          <input type="hidden" id="order-prescription-id" value="" />
+
+          <div class="inv-order-form">
+            <div class="row inv-order-form-row">
+              <div class="col s12 l8">
+                <span class="inv-order-field-label" id="lbl-order-customer">Customer *</span>
+                <div class="inv-customer-row">
+                  <div class="oc-customer-wrap inv-customer-combo">
+                    <input
+                      type="search"
+                      id="order-customer-search"
+                      class="browser-default oc-customer-search"
+                      placeholder="Search customer…"
+                      autocomplete="off"
+                      aria-labelledby="lbl-order-customer"
+                    />
+                    <input type="hidden" id="order-customer-id" value="" />
+                    <ul id="order-customer-dd" class="oc-customer-dd hide browser-default" aria-hidden="true"></ul>
+                  </div>
+                  <button type="button" id="btn-quick-customer" class="btn-small waves-effect inv-btn-outline inv-quick-customer-btn">
+                    <i class="material-icons left" aria-hidden="true">person_add</i>Quick add
+                  </button>
+                </div>
+              </div>
+              <div class="input-field col s12 l4 inv-order-field-date">
+                <input type="date" id="order-date" class="browser-default inv-filter-date-input" required />
+                <label for="order-date" class="active">Order date *</label>
+              </div>
+            </div>
+
+            <div id="order-prescription-panel" class="inv-order-prescription-panel hide" aria-live="polite">
+              <div class="inv-order-prescription-inner">
+                <div class="inv-order-prescription-left">
+                  <span class="inv-order-field-label">Linked prescription</span>
+                  <p id="order-prescription-summary" class="inv-order-prescription-summary"></p>
+                  <div class="inv-order-prescription-actions">
+                    <a
+                      id="order-prescription-link"
+                      href="#"
+                      class="btn-flat inv-link-btn waves-effect"
+                      target="_blank"
+                      rel="noopener"
+                      >View prescription</a
+                    >
+                    <button type="button" id="btn-order-unlink-rx" class="btn-flat grey-text waves-effect hide">
+                      Remove link
+                    </button>
+                  </div>
+                </div>
+                <div class="inv-order-prescription-right">
+                  <span class="inv-order-field-label">Prescription lines</span>
+                  <div id="order-prescription-lines" class="inv-order-prescription-lines"></div>
+                </div>
+              </div>
+            </div>
+
+            <div class="inv-order-meta-row">
+              <div class="inv-order-meta-block">
+                <span class="inv-order-field-label" id="lbl-order-number">Order number</span>
+                <p class="inv-order-number-display inv-mono" id="order-number-display" title="">
+                  Auto-assigned when you save
+                </p>
+              </div>
+              <div class="inv-order-meta-block inv-order-meta-block--discount">
+                <label class="inv-order-field-label" for="order-discount-inr">Header discount (₹)</label>
+                <input
+                  type="text"
+                  id="order-discount-inr"
+                  class="browser-default inv-order-discount-input"
+                  placeholder="0.00"
+                  autocomplete="off"
+                />
+              </div>
+            </div>
+            <div class="row inv-order-form-row inv-order-form-row--notes">
+              <div class="input-field col s12">
+                <textarea id="order-notes" class="materialize-textarea"></textarea>
+                <label for="order-notes">Order notes</label>
+              </div>
+            </div>
+          </div>
+
+          <div class="inv-order-line-items-block">
+            <h3 class="inv-panel-title inv-order-line-items-title">Line items</h3>
+            <p class="grey-text text-darken-1 inv-order-line-items-lead">
+              Enter tablets (tabs) per line. After you pick a product, the Tabs column shows <strong>how many tabs are
+              available in all lots</strong> (below the quantity). Confirming the order deducts that many tablets from
+              stock (partial strips allowed). Line amount uses units/strip from the product and the latest purchase strip
+              price. Line discount is flat rupees off that row. Money is stored in paise.
+            </p>
+
+            <div class="inv-table-scroll inv-order-line-table-scroll">
+              <table class="inv-data-table inv-order-line-table">
+                <colgroup>
+                  <col class="inv-olt-col inv-olt-col-product" />
+                  <col class="inv-olt-col inv-olt-col-tabs" />
+                  <col class="inv-olt-col inv-olt-col-disc" />
+                  <col class="inv-olt-col inv-olt-col-total" />
+                  <col class="inv-olt-col inv-olt-col-actions" />
+                </colgroup>
+                <thead>
+                  <tr>
+                    <th scope="col">Product</th>
+                    <th scope="col" class="inv-olt-th-tabs">
+                      Tabs
+                      <span class="inv-olt-th-hint">Qty · tabs in all lots</span>
+                    </th>
+                    <th scope="col">Line disc (₹)</th>
+                    <th scope="col">Line ₹</th>
+                    <th scope="col" class="inv-th-actions inv-olt-th-actions" aria-label="Row actions"></th>
+                  </tr>
+                </thead>
+                <tbody id="order-lines-body"></tbody>
+              </table>
+            </div>
+
+            <p class="inv-order-add-line-wrap">
+              <button type="button" id="btn-add-line" class="btn-small waves-effect inv-btn-outline">
+                <i class="material-icons left inv-order-add-line-icon" aria-hidden="true">add</i>Add line
+              </button>
+            </p>
+
+            <div class="inv-order-summary" id="order-totals-summary" aria-live="polite">
+              <span>Lines subtotal: <strong id="order-sum-lines">₹0.00</strong></span>
+              <span>Discount: <strong id="order-sum-discount">₹0.00</strong></span>
+              <span>Order total: <strong id="order-sum-grand">₹0.00</strong></span>
+            </div>
+          </div>
+        </div>
+
+        <p class="inv-disclaimer">
+          Order total is line subtotal minus header discount. Line ₹ is computed from inventory strip pricing unless you
+          loaded a saved draft. Stock is not reduced automatically (phase 2).
+        </p>
+      </div>
+    </div>
+
+    <!-- Quick add customer -->
+    <div id="modal-order-customer" class="modal modal-fixed-footer">
+      <form id="form-order-customer">
+        <div class="modal-content">
+          <h4>Quick add customer</h4>
+          <div class="row">
+            <div class="input-field col s12">
+              <input id="ocf-name" type="text" required autocomplete="name" />
+              <label for="ocf-name">Name *</label>
+            </div>
+            <div class="input-field col s12 m6">
+              <input id="ocf-phone" type="tel" autocomplete="tel" />
+              <label for="ocf-phone">Phone</label>
+            </div>
+            <div class="input-field col s12 m6">
+              <input id="ocf-city" type="text" />
+              <label for="ocf-city">City</label>
+            </div>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="modal-close btn-flat grey-text">Cancel</button>
+          <button type="submit" class="btn waves-effect waves-light teal darken-1">Save</button>
+        </div>
+      </form>
+    </div>
+
+    <script src="js/marg-offline.js"></script>
+    <script src="vendor/js/jquery.min.js"></script>
+    <script src="vendor/js/underscore-min.js"></script>
+    <script src="vendor/js/backbone-min.js"></script>
+    <script src="vendor/js/materialize.min.js"></script>
+    <script src="vendor/js/sql-wasm.js"></script>
+    <script src="js/terms-defaults.js"></script>
+    <script src="js/invoice-format-defaults.js"></script>
+    <script src="js/invoice-html.js"></script>
+    <script src="js/db.js"></script>
+    <script src="js/views/app-layout-view.js"></script>
+    <script src="js/global-search.js"></script>
+    <script src="js/marg-sync.js"></script>
+    <script src="js/orders-main.js?v=3"></script>
+  </body>
+</html>

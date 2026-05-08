@@ -1,0 +1,131 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="theme-color" content="#00897b" />
+    <link rel="manifest" href="manifest.json" />
+    <link rel="apple-touch-icon" href="icons/icon-192.png" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-title" content="Pharmacy ERP" />
+    <title>Pharmacy ERP — Edit purchase lot</title>
+    <link
+      rel="stylesheet"
+      href="vendor/css/materialize.min.css"
+    />
+    <link rel="stylesheet" href="vendor/css/fonts-local.css" />
+    <link rel="stylesheet" href="css/inventory.css" />
+  </head>
+  <body class="inv-app-body page-lot-edit">
+    <div id="layout-root"></div>
+    <div id="page-fragment">
+      <div class="inv-main-column">
+        <div class="inv-content-card z-depth-1">
+          <header class="inv-panel-head">
+            <div class="inv-panel-head-text">
+              <h1 class="inv-panel-title">Edit purchase lot</h1>
+              <p class="inv-panel-subtitle">Update invoice details, amounts, and line items.</p>
+            </div>
+            <a href="#" id="le-back" class="btn-flat inv-link-btn waves-effect">Back to lot</a>
+          </header>
+
+          <form id="form-lot">
+            <input type="hidden" id="le-lot-id" value="" />
+            <div
+              class="row inv-lot-fin-row inv-lot-summary-top inv-lot-stat-row"
+              role="status"
+              aria-live="polite"
+              aria-label="Totals from line items"
+            >
+              <div class="col s12 m4 inv-lot-stat-cell">
+                <span class="inv-lot-stat-label">MRP total (₹)</span>
+                <span id="lf-total-mrp" class="inv-lot-stat-value">—</span>
+              </div>
+              <div class="col s12 m4 inv-lot-stat-cell">
+                <span class="inv-lot-stat-label">Margin on MRP (₹)</span>
+                <span id="lf-margin" class="inv-lot-stat-value">—</span>
+              </div>
+              <div class="col s12 m4 inv-lot-stat-cell">
+                <span class="inv-lot-stat-label">Selling total (₹)</span>
+                <span id="lf-selling-total" class="inv-lot-stat-value">—</span>
+              </div>
+            </div>
+            <input type="hidden" id="lf-total-mrp-paise" name="lf_total_mrp_paise" value="" autocomplete="off" />
+            <input type="hidden" id="lf-margin-paise" name="lf_margin_paise" value="" autocomplete="off" />
+            <input type="hidden" id="lf-selling-total-paise" name="lf_selling_total_paise" value="" autocomplete="off" />
+            <div class="row inv-lot-meta-row">
+              <div class="input-field col s12 m6">
+                <input id="lf-lot-number" type="text" required />
+                <label for="lf-lot-number">Lot / invoice number *</label>
+              </div>
+              <div class="input-field col s12 m6">
+                <label for="lf-vendor" class="active">Supplier</label>
+                <select id="lf-vendor" class="browser-default">
+                  <option value="">— No vendor —</option>
+                </select>
+              </div>
+            </div>
+            <div class="row inv-lot-meta-row">
+              <div class="input-field col s12 m6">
+                <input id="lf-lot-date" type="date" class="validate" />
+                <label for="lf-lot-date" class="active">Lot / invoice date</label>
+              </div>
+              <div class="input-field col s12 m6">
+                <input id="lf-delivered-date" type="date" />
+                <label for="lf-delivered-date" class="active">Delivered date</label>
+              </div>
+            </div>
+            <div class="row inv-lot-fin-row inv-lot-fin-row--paid-delivered">
+              <div class="col s12 m6 inv-lot-fin-cell">
+                <label for="lf-paid" class="inv-lot-fin-label">Total paid (₹)</label>
+                <input id="lf-paid" type="number" min="0" step="0.01" class="inv-lot-fin-input inv-lot-fin-input--editable" />
+              </div>
+              <div class="input-field col s12 m6 inv-lot-inline-field">
+                <input id="lf-delivered-by" type="text" />
+                <label for="lf-delivered-by">Delivered by</label>
+              </div>
+            </div>
+            <div class="row inv-lot-meta-row">
+              <div class="input-field col s12">
+                <textarea id="lf-notes" class="materialize-textarea"></textarea>
+                <label for="lf-notes">Notes</label>
+              </div>
+            </div>
+            <h6 style="margin-top: 0.5rem">Line items</h6>
+            <p class="grey-text text-darken-1" style="margin: 0 0 0.75rem; font-size: 0.85rem">
+              Each line is in <strong>strips</strong>. Use <strong>strip selling ₹</strong> or <strong>strip MRP ₹</strong> +
+              <strong>margin % off MRP</strong> for effective selling. <strong>MRP total</strong>, <strong>Margin on MRP</strong>, and
+              <strong>Selling total</strong> at the top follow your lines; the stored lot total matches <strong>Selling total</strong>.
+            </p>
+            <div id="lot-lines-container"></div>
+            <p style="margin: 0.75rem 0 0">
+              <button type="button" id="btn-lot-line-add" class="btn-small waves-effect teal lighten-1">
+                <i class="material-icons left" style="font-size: 1.1rem">add</i>Add line
+              </button>
+            </p>
+            <div class="inv-lot-new-actions" style="margin-top: 1.5rem; display: flex; flex-wrap: wrap; gap: 0.75rem; align-items: center">
+              <button type="submit" class="btn waves-effect inv-btn-primary">
+                <i class="material-icons left">save</i>Save changes
+              </button>
+              <a href="#" id="le-cancel" class="btn-flat waves-effect">Cancel</a>
+            </div>
+          </form>
+        </div>
+
+        <p class="inv-disclaimer">Data is stored locally in this browser.</p>
+      </div>
+    </div>
+
+    <script src="js/marg-offline.js"></script>
+    <script src="vendor/js/jquery.min.js"></script>
+    <script src="vendor/js/underscore-min.js"></script>
+    <script src="vendor/js/backbone-min.js"></script>
+    <script src="vendor/js/materialize.min.js"></script>
+    <script src="vendor/js/sql-wasm.js"></script>
+    <script src="js/db.js"></script>
+    <script src="js/views/app-layout-view.js"></script>
+    <script src="js/global-search.js"></script>
+    <script src="js/marg-sync.js"></script>
+    <script src="js/lot-edit-main.js?v=20260411b"></script>
+  </body>
+</html>

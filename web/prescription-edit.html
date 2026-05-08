@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="theme-color" content="#00897b" />
+    <link rel="manifest" href="manifest.json" />
+    <link rel="apple-touch-icon" href="icons/icon-192.png" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-title" content="Pharmacy ERP" />
+    <title>Pharmacy ERP — Prescription</title>
+    <link
+      rel="stylesheet"
+      href="vendor/css/materialize.min.css"
+    />
+    <link rel="stylesheet" href="vendor/css/fonts-local.css" />
+    <link rel="stylesheet" href="css/inventory.css" />
+  </head>
+  <body class="inv-app-body">
+    <div id="layout-root"></div>
+    <div id="page-fragment">
+      <div class="inv-main-column">
+        <div class="inv-customer-detail-head">
+          <a href="prescriptions.html" class="inv-back-link btn-flat waves-effect">
+            <i class="material-icons left">arrow_back</i>Prescriptions
+          </a>
+        </div>
+
+        <div class="inv-content-card z-depth-1">
+          <header class="inv-panel-head">
+            <div class="inv-panel-head-text">
+              <h1 class="inv-panel-title" id="rx-edit-title">Add prescription</h1>
+              <p class="inv-panel-subtitle">
+                Choose patient, doctor details, and one or more lines (status, type, notes). Secret notes stay internal.
+              </p>
+            </div>
+            <div class="inv-panel-head-actions">
+              <a href="#" id="rx-link-view-detail" class="btn inv-btn-outline waves-effect hide">
+                <i class="material-icons left">visibility</i>View details
+              </a>
+            </div>
+          </header>
+
+          <form id="form-rx-edit">
+            <input type="hidden" id="rx-id" value="" />
+            <div class="row" style="margin-bottom: 0">
+              <div class="col s12">
+                <span class="inv-order-field-label" id="lbl-rx-patient">Patient (customer) *</span>
+                <div id="rx-customer-wrap" class="oc-customer-wrap inv-customer-combo">
+                  <input
+                    type="search"
+                    id="rx-customer-search"
+                    class="browser-default oc-customer-search"
+                    placeholder="Search by name or phone…"
+                    autocomplete="off"
+                    aria-labelledby="lbl-rx-patient"
+                  />
+                  <input type="hidden" id="rx-customer-id" value="" />
+                  <ul id="rx-customer-dd" class="oc-customer-dd hide browser-default" aria-hidden="true"></ul>
+                </div>
+                <button type="button" id="btn-rx-quick-customer" class="btn-small waves-effect teal lighten-2" style="margin-top: 10px">
+                  <i class="material-icons left" aria-hidden="true">person_add</i>
+                  Quick add patient
+                </button>
+              </div>
+              <div class="input-field col s12 m6">
+                <input id="rx-doctor-name" type="text" autocomplete="off" />
+                <label for="rx-doctor-name">Doctor name</label>
+              </div>
+              <div class="input-field col s12 m6">
+                <input id="rx-doctor-phone" type="tel" autocomplete="off" />
+                <label for="rx-doctor-phone">Doctor phone</label>
+              </div>
+            </div>
+            <h5 class="inv-rx-lines-heading">Lines</h5>
+            <p class="grey-text text-darken-1" style="margin-top: 0; font-size: 0.9rem">
+              Internal-only text belongs in <strong>Secret notes</strong> (not searched from the dashboard).
+            </p>
+            <div id="rx-lines-container"></div>
+            <button type="button" id="btn-rx-add-line" class="btn-flat waves-effect teal-text">
+              <i class="material-icons left">add</i>Add line
+            </button>
+
+            <div class="inv-rx-form-actions">
+              <a href="prescriptions.html" class="btn-flat grey-text">Cancel</a>
+              <button type="submit" class="btn waves-effect waves-light teal darken-1">
+                <i class="material-icons left">save</i>Save
+              </button>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
+
+    <div id="modal-rx-customer" class="modal modal-fixed-footer">
+      <form id="form-rx-customer">
+        <div class="modal-content">
+          <h4>Add patient</h4>
+          <p class="grey-text" style="margin-top: 0">Enter full name and phone. A new customer record is created and selected.</p>
+          <div class="row" style="margin-bottom: 0">
+            <div class="input-field col s12">
+              <input id="rxf-name" type="text" required autocomplete="name" />
+              <label for="rxf-name">Full name *</label>
+            </div>
+            <div class="input-field col s12">
+              <input id="rxf-phone" type="tel" required autocomplete="tel" />
+              <label for="rxf-phone">Phone *</label>
+            </div>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="modal-close btn-flat grey-text">Cancel</button>
+          <button type="submit" class="btn waves-effect waves-light teal darken-1">Save &amp; select</button>
+        </div>
+      </form>
+    </div>
+
+    <script src="js/marg-offline.js"></script>
+    <script src="vendor/js/jquery.min.js"></script>
+    <script src="vendor/js/underscore-min.js"></script>
+    <script src="vendor/js/backbone-min.js"></script>
+    <script src="vendor/js/materialize.min.js"></script>
+    <script src="vendor/js/sql-wasm.js"></script>
+    <script src="js/db.js"></script>
+    <script src="js/views/app-layout-view.js"></script>
+    <script src="js/global-search.js"></script>
+    <script src="js/marg-sync.js"></script>
+    <script src="js/prescription-edit-main.js"></script>
+  </body>
+</html>

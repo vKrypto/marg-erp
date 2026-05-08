@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="theme-color" content="#00897b" />
+    <link rel="manifest" href="manifest.json" />
+    <link rel="apple-touch-icon" href="icons/icon-192.png" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-title" content="Pharmacy ERP" />
+    <title>Pharmacy ERP — Terms & conditions</title>
+    <link
+      rel="stylesheet"
+      href="vendor/css/materialize.min.css"
+    />
+    <link rel="stylesheet" href="vendor/css/fonts-local.css" />
+    <link rel="stylesheet" href="css/inventory.css" />
+  </head>
+  <body class="inv-app-body">
+    <div id="layout-root"></div>
+    <div id="page-fragment">
+      <div class="inv-main-column">
+        <div class="inv-content-card z-depth-1">
+          <header class="inv-panel-head">
+            <div class="inv-panel-head-text">
+              <h1 class="inv-panel-title">Terms & conditions</h1>
+              <p class="inv-panel-subtitle">
+                Default text is pre-filled and kept in this browser (local storage) until you save to the
+                database or edit it. Saved terms print at the bottom of invoices (below order notes).
+              </p>
+            </div>
+            <button type="button" id="btn-save-terms" class="btn waves-effect inv-btn-primary">
+              <i class="material-icons left">save</i>Save
+            </button>
+          </header>
+
+          <div class="input-field inv-terms-field">
+            <textarea id="terms-body" class="materialize-textarea" rows="14" placeholder="Enter terms, returns policy, payment terms, etc."></textarea>
+            <label for="terms-body">Terms & conditions</label>
+          </div>
+
+          <p class="grey-text text-darken-1" style="font-size: 0.85rem; margin-top: 1rem">
+            Line breaks are preserved on printed invoices. Leave empty to omit the section.
+          </p>
+        </div>
+      </div>
+    </div>
+
+    <script src="js/marg-offline.js"></script>
+    <script src="vendor/js/jquery.min.js"></script>
+    <script src="vendor/js/underscore-min.js"></script>
+    <script src="vendor/js/backbone-min.js"></script>
+    <script src="vendor/js/materialize.min.js"></script>
+    <script src="vendor/js/sql-wasm.js"></script>
+    <script src="js/terms-defaults.js"></script>
+    <script src="js/db.js"></script>
+    <script src="js/views/app-layout-view.js"></script>
+    <script src="js/global-search.js"></script>
+    <script src="js/marg-sync.js"></script>
+    <script src="js/terms-main.js"></script>
+  </body>
+</html>

@@ -1,0 +1,196 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="theme-color" content="#00897b" />
+    <link rel="manifest" href="manifest.json" />
+    <link rel="apple-touch-icon" href="icons/icon-192.png" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-title" content="Pharmacy ERP" />
+    <title>Pharmacy ERP — Dashboard</title>
+    <link
+      rel="stylesheet"
+      href="vendor/css/materialize.min.css"
+    />
+    <link rel="stylesheet" href="vendor/css/fonts-local.css" />
+    <link rel="stylesheet" href="css/inventory.css" />
+  </head>
+  <body class="inv-app-body">
+    <div id="layout-root"></div>
+    <div id="page-fragment">
+      <div class="inv-main-column inv-dashboard-page">
+        <!-- Title + entity + refresh -->
+        <div class="inv-dashboard-hero">
+          <span class="inv-dash-kicker">Dashboard</span>
+          <h1 class="inv-panel-title" style="margin-top: 0.25rem">Welcome back</h1>
+          <p class="inv-panel-subtitle inv-dashboard-sub">
+            <strong id="dashboard-entity-name">—</strong>
+            <span class="inv-dashboard-sub-actions">
+              <button type="button" id="dashboard-refresh" class="btn-flat waves-effect inv-link-btn" title="Refresh">
+                <i class="material-icons left" style="font-size: 1.25rem">refresh</i>Refresh
+              </button>
+            </span>
+          </p>
+        </div>
+
+        <!-- Row 2: KPI chips -->
+        <div class="inv-dash-metrics" id="dashboard-metric-chips">
+          <div class="inv-dash-metric-chip">
+            <span class="inv-dash-metric-label">Receipt today</span>
+            <span class="inv-dash-metric-value" id="metric-receipts-today">—</span>
+            <span class="inv-dash-metric-hint">orders · net sales</span>
+          </div>
+          <div class="inv-dash-metric-chip">
+            <span class="inv-dash-metric-label">Total sale this month</span>
+            <span class="inv-dash-metric-value" id="metric-sales-month">—</span>
+            <span class="inv-dash-metric-hint">net of discounts</span>
+          </div>
+          <div class="inv-dash-metric-chip">
+            <span class="inv-dash-metric-label">Total revenue</span>
+            <span class="inv-dash-metric-value" id="metric-revenue-all">—</span>
+            <span class="inv-dash-metric-hint">all time</span>
+          </div>
+          <div class="inv-dash-metric-chip">
+            <span class="inv-dash-metric-label">Customers added (month)</span>
+            <span class="inv-dash-metric-value" id="metric-customers-new">—</span>
+            <span class="inv-dash-metric-hint">new this month</span>
+          </div>
+          <div class="inv-dash-metric-chip">
+            <span class="inv-dash-metric-label">Total customers</span>
+            <span class="inv-dash-metric-value" id="metric-customers-total">—</span>
+          </div>
+          <div class="inv-dash-metric-chip">
+            <span class="inv-dash-metric-label">Products (medicines)</span>
+            <span class="inv-dash-metric-value" id="metric-products">—</span>
+            <span class="inv-dash-metric-hint">active SKUs</span>
+          </div>
+          <div class="inv-dash-metric-chip">
+            <span class="inv-dash-metric-label">Total inventory value</span>
+            <span class="inv-dash-metric-value" id="metric-inventory">—</span>
+            <span class="inv-dash-metric-hint">stock × latest lot price</span>
+          </div>
+        </div>
+
+        <!-- Row 3: sales chart (last ~30 days) -->
+        <div class="inv-content-card z-depth-1 inv-dash-chart-card">
+          <h2 class="inv-preview-heading">Sales by day (last month)</h2>
+          <p class="grey-text text-darken-1 inv-preview-hint" id="dashboard-sales-chart-caption">—</p>
+          <div id="dashboard-sales-chart-bars" class="inv-dash-chart-wrap"></div>
+        </div>
+
+        <!-- Row 4: low / out of stock — full width -->
+        <div class="row inv-dash-tables-row">
+          <div class="col s12">
+            <div class="inv-content-card z-depth-1 inv-dash-table-card">
+              <h2 class="inv-preview-heading">Top 10 — low stock &amp; out of stock</h2>
+              <p class="grey-text text-darken-1 inv-preview-hint">
+                Active products with on-hand stock ≤ 20 units (lowest first)
+              </p>
+              <div class="inv-table-scroll">
+                <table class="striped responsive-table inv-dash-table">
+                  <thead>
+                    <tr>
+                      <th>Product</th>
+                      <th>Code</th>
+                      <th>Pack</th>
+                      <th>Stock</th>
+                    </tr>
+                  </thead>
+                  <tbody id="dashboard-low-stock-body"></tbody>
+                </table>
+              </div>
+              <p class="inv-dash-table-foot">
+                <a href="inventory.html?panel=products">Open inventory →</a>
+              </p>
+            </div>
+          </div>
+        </div>
+
+        <!-- Row 5: recent prescriptions — full width -->
+        <div class="row inv-dash-tables-row">
+          <div class="col s12">
+            <div class="inv-content-card z-depth-1 inv-dash-table-card">
+              <h2 class="inv-preview-heading">10 recent prescriptions</h2>
+              <p class="grey-text text-darken-1 inv-preview-hint">Newest by recorded date</p>
+              <div class="inv-table-scroll">
+                <table class="striped responsive-table inv-dash-table">
+                  <thead>
+                    <tr>
+                      <th>Customer</th>
+                      <th>Doctor</th>
+                      <th>Recorded</th>
+                      <th class="right-align">Lines</th>
+                      <th class="inv-th-actions">Open</th>
+                    </tr>
+                  </thead>
+                  <tbody id="dashboard-rx-body"></tbody>
+                </table>
+              </div>
+              <p class="inv-dash-table-foot">
+                <a href="prescriptions.html">All prescriptions →</a>
+              </p>
+            </div>
+          </div>
+        </div>
+
+        <!-- Row 6: recent purchases — full width -->
+        <div class="row inv-dash-tables-row">
+          <div class="col s12">
+            <div class="inv-content-card z-depth-1 inv-dash-table-card">
+              <h2 class="inv-preview-heading">10 recent purchases</h2>
+              <p class="grey-text text-darken-1 inv-preview-hint">Latest inbound lots (purchase orders) by recorded date</p>
+              <div class="inv-table-scroll">
+                <table class="striped responsive-table inv-dash-table">
+                  <thead>
+                    <tr>
+                      <th>Lot #</th>
+                      <th>Vendor</th>
+                      <th>Delivered</th>
+                      <th class="right-align">Total</th>
+                      <th>Recorded</th>
+                    </tr>
+                  </thead>
+                  <tbody id="dashboard-lots-body"></tbody>
+                </table>
+              </div>
+              <p class="inv-dash-table-foot">
+                <a href="inventory.html?panel=lots">Open lots →</a>
+              </p>
+            </div>
+          </div>
+        </div>
+
+        <div class="inv-content-card z-depth-1 inv-dashboard-quicklinks">
+          <p class="inv-panel-subtitle" style="margin-bottom: 0">
+            <a href="inventory.html?panel=products" class="btn waves-effect inv-btn-primary"
+              ><i class="material-icons left">inventory_2</i>Inventory</a
+            >
+            <a href="customers.html" class="btn inv-btn-outline waves-effect"
+              ><i class="material-icons left">people</i>Customers</a
+            >
+            <a href="orders.html" class="btn inv-btn-outline waves-effect"
+              ><i class="material-icons left">receipt_long</i>Orders</a
+            >
+            <a href="prescriptions.html" class="btn inv-btn-outline waves-effect"
+              ><i class="material-icons left">medical_services</i>Prescriptions</a
+            >
+          </p>
+        </div>
+      </div>
+    </div>
+
+    <script src="js/marg-offline.js"></script>
+    <script src="vendor/js/jquery.min.js"></script>
+    <script src="vendor/js/underscore-min.js"></script>
+    <script src="vendor/js/backbone-min.js"></script>
+    <script src="vendor/js/materialize.min.js"></script>
+    <script src="vendor/js/sql-wasm.js"></script>
+    <script src="js/invoice-format-defaults.js"></script>
+    <script src="js/db.js"></script>
+    <script src="js/views/app-layout-view.js"></script>
+    <script src="js/global-search.js"></script>
+    <script src="js/marg-sync.js"></script>
+    <script src="js/dashboard-main.js"></script>
+  </body>
+</html>

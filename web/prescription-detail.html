@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="theme-color" content="#00897b" />
+    <link rel="manifest" href="manifest.json" />
+    <link rel="apple-touch-icon" href="icons/icon-192.png" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-title" content="Pharmacy ERP" />
+    <title>Pharmacy ERP — Prescription</title>
+    <link
+      rel="stylesheet"
+      href="vendor/css/materialize.min.css"
+    />
+    <link rel="stylesheet" href="vendor/css/fonts-local.css" />
+    <link rel="stylesheet" href="css/inventory.css" />
+  </head>
+  <body class="inv-app-body">
+    <div id="layout-root"></div>
+    <div id="page-fragment">
+      <div class="inv-main-column inv-rx-detail-page">
+        <div class="inv-rx-detail-toolbar inv-no-print">
+          <a href="prescriptions.html" class="inv-back-link btn-flat waves-effect">
+            <i class="material-icons left">arrow_back</i>Prescriptions
+          </a>
+          <div class="inv-rx-detail-toolbar-actions">
+            <label class="inv-rx-print-secret-label">
+              <input type="checkbox" id="rx-include-secret-print" class="filled-in" />
+              <span>Include internal notes on print</span>
+            </label>
+            <button type="button" id="btn-rx-print" class="btn waves-effect inv-btn-primary">
+              <i class="material-icons left">print</i>Print
+            </button>
+            <a href="#" id="btn-rx-edit" class="btn inv-btn-outline waves-effect">
+              <i class="material-icons left">edit</i>Edit
+            </a>
+          </div>
+        </div>
+
+        <div id="rx-detail-root" class="inv-content-card z-depth-1 inv-rx-print-sheet">
+          <p class="grey-text center" id="rx-detail-loading">Loading…</p>
+        </div>
+      </div>
+    </div>
+
+    <script src="js/marg-offline.js"></script>
+    <script src="vendor/js/jquery.min.js"></script>
+    <script src="vendor/js/underscore-min.js"></script>
+    <script src="vendor/js/backbone-min.js"></script>
+    <script src="vendor/js/materialize.min.js"></script>
+    <script src="vendor/js/sql-wasm.js"></script>
+    <script src="js/db.js"></script>
+    <script src="js/views/app-layout-view.js"></script>
+    <script src="js/global-search.js"></script>
+    <script src="js/marg-sync.js"></script>
+    <script src="js/prescription-detail-main.js"></script>
+  </body>
+</html>

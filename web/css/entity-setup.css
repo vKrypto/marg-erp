@@ -1,0 +1,368 @@
+/* Entity Setup — Pharmacy ERP (Superdesign-style session setup) */
+
+.entity-setup-bg {
+  min-height: 100vh;
+  background: #e8ecf0;
+  background-image: radial-gradient(
+      circle at 8% 92%,
+      rgba(0, 137, 123, 0.07) 0%,
+      transparent 42%
+    ),
+    radial-gradient(circle at 94% 8%, rgba(0, 137, 123, 0.06) 0%, transparent 38%),
+    linear-gradient(135deg, #eef2f5 0%, #e5eaee 100%);
+  font-family: "Roboto", "Helvetica Neue", Helvetica, Arial, sans-serif;
+  padding-bottom: 3rem;
+}
+
+.entity-setup-header {
+  padding: 2rem 1rem 1.5rem;
+}
+
+.entity-setup-header .brand-mark {
+  width: 56px;
+  height: 56px;
+  border-radius: 14px;
+  background: #00897b;
+  color: #fff;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 6px 18px rgba(0, 137, 123, 0.35);
+  margin-bottom: 0.75rem;
+}
+
+.entity-setup-header h1 {
+  font-size: 1.65rem;
+  font-weight: 700;
+  color: #263238;
+  margin: 0.35rem 0 0.25rem;
+  letter-spacing: -0.02em;
+}
+
+.entity-setup-header .subtitle {
+  font-size: 0.7rem;
+  letter-spacing: 0.22em;
+  color: #90a4ae;
+  font-weight: 600;
+  margin: 0;
+}
+
+.entity-setup-shell {
+  border-radius: 14px !important;
+  overflow: hidden;
+  box-shadow: 0 16px 48px rgba(0, 0, 0, 0.08), 0 4px 12px rgba(0, 0, 0, 0.04) !important;
+  margin-top: 0.5rem;
+}
+
+.entity-setup-shell .row {
+  margin-bottom: 0;
+}
+
+.entity-setup-sidebar {
+  background: #f7f9fb;
+  border-right: 1px solid #e0e6ec;
+  padding: 1.75rem 1rem 2rem !important;
+  min-height: 520px;
+}
+
+.nav-steps {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.nav-steps li {
+  margin-bottom: 0.35rem;
+}
+
+.nav-steps li a {
+  display: flex;
+  align-items: center;
+  gap: 0.65rem;
+  padding: 0.75rem 1rem;
+  border-radius: 999px;
+  color: #78909c;
+  font-weight: 600;
+  font-size: 0.9rem;
+  transition: background 0.2s, color 0.2s;
+}
+
+.nav-steps li a .material-icons {
+  font-size: 1.35rem;
+}
+
+.nav-steps li.active a {
+  background: #fff;
+  color: #00897b;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+}
+
+.nav-steps li:not(.active) a:hover {
+  background: rgba(255, 255, 255, 0.7);
+  color: #546e7a;
+}
+
+.setup-progress {
+  margin-top: 2rem;
+  padding-top: 1.25rem;
+  border-top: 1px solid #dde4ea;
+  font-size: 0.65rem;
+  letter-spacing: 0.18em;
+  color: #b0bec5;
+  font-weight: 700;
+}
+
+.setup-progress span {
+  color: #00897b;
+}
+
+.entity-setup-main {
+  padding: 1.75rem 1.75rem 2rem !important;
+  background: #fff;
+}
+
+.setup-section {
+  margin-bottom: 2rem;
+}
+
+.setup-section-title {
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.16em;
+  color: #546e7a;
+  text-transform: uppercase;
+  margin: 0 0 1.25rem;
+  padding-left: 12px;
+  border-left: 4px solid #00897b;
+  line-height: 1.2;
+}
+
+.field-label-caps {
+  font-size: 0.68rem !important;
+  font-weight: 700 !important;
+  letter-spacing: 0.12em !important;
+  color: #78909c !important;
+  transform: none !important;
+}
+
+.entity-setup-main .input-field input,
+.entity-setup-main .input-field textarea {
+  border-radius: 8px !important;
+  border: 1px solid #cfd8dc !important;
+  box-shadow: none !important;
+  padding-left: 12px !important;
+  padding-right: 12px !important;
+  box-sizing: border-box !important;
+  margin-bottom: 0 !important;
+}
+
+.entity-setup-main .input-field textarea {
+  min-height: 96px;
+  padding-top: 10px !important;
+}
+
+.entity-setup-main .input-field label.field-label-caps {
+  left: 12px !important;
+  top: -22px !important;
+  position: absolute !important;
+}
+
+.inventory-mini-card {
+  background: #f5f7f9;
+  border-radius: 10px;
+  padding: 1rem 1rem 1rem 1.1rem;
+  border: 1px solid #e3e8ec;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+}
+
+.inventory-mini-card h3 {
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: #37474f;
+  margin: 0 0 0.25rem;
+}
+
+.inventory-mini-card p.hint {
+  font-size: 0.78rem;
+  color: #90a4ae;
+  margin: 0 0 0.75rem;
+  line-height: 1.35;
+}
+
+.inventory-mini-card .value-box {
+  align-self: flex-end;
+  background: #fff;
+  border: 1px solid #e0e6ec;
+  border-radius: 8px;
+  padding: 0.35rem 0.65rem;
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: #00897b;
+  min-width: 3.5rem;
+  text-align: center;
+}
+
+.inventory-mini-card .value-box input {
+  border: none !important;
+  text-align: center;
+  margin: 0 !important;
+  height: 2rem !important;
+  font-weight: 700 !important;
+  color: #00897b !important;
+}
+
+.setup-payment-hint {
+  font-size: 0.88rem;
+  margin: 0 0 1rem;
+  line-height: 1.45;
+  max-width: 100%;
+  overflow-wrap: anywhere;
+  word-wrap: break-word;
+}
+
+.payment-grid {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  gap: 0.65rem;
+}
+
+.payment-chip {
+  position: relative;
+  display: inline-flex;
+}
+
+/* Kill Materialize / native checkbox chrome; chip UI is custom */
+.payment-chip input[type="checkbox"] {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+  opacity: 0;
+  appearance: none;
+  -webkit-appearance: none;
+}
+
+.payment-chip-label {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.55rem 0.9rem;
+  border-radius: 8px;
+  border: 1.5px solid #cfd8dc;
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: #607d8b;
+  cursor: pointer;
+  transition: border-color 0.2s, background 0.2s, color 0.2s;
+  user-select: none;
+  line-height: 1.3;
+}
+
+.payment-chip-check {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 1.125rem;
+  height: 1.125rem;
+  border-radius: 4px;
+  border: 1.5px solid #b0bec5;
+  background: #fff;
+  flex-shrink: 0;
+  box-sizing: border-box;
+}
+
+.payment-chip-check--muted {
+  border-color: #e0e6ec;
+  background: #f5f5f5;
+}
+
+.payment-chip input:checked + .payment-chip-label {
+  border-color: #00897b;
+  background: #e0f2f1;
+  color: #00695c;
+}
+
+.payment-chip input:checked + .payment-chip-label .payment-chip-check {
+  border-color: #00897b;
+  background: #00897b;
+}
+
+.payment-chip input:checked + .payment-chip-label .payment-chip-check::after {
+  content: "";
+  display: block;
+  width: 0.28rem;
+  height: 0.48rem;
+  border: solid #fff;
+  border-width: 0 2px 2px 0;
+  transform: rotate(45deg);
+  margin-bottom: 2px;
+}
+
+.payment-chip input:focus-visible + .payment-chip-label {
+  outline: 2px solid rgba(0, 137, 123, 0.45);
+  outline-offset: 2px;
+}
+
+.payment-chip.payment-chip--disabled {
+  opacity: 0.72;
+  pointer-events: none;
+}
+
+.payment-chip.payment-chip--disabled .payment-chip-label {
+  cursor: not-allowed;
+  border-color: #eceff1;
+  background: #fafafa;
+  color: #b0bec5;
+}
+
+.entity-setup-footer-strip {
+  padding: 0.65rem 1.25rem !important;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  border-top: 1px solid #eceff1 !important;
+}
+
+.storage-hint {
+  font-size: 0.72rem;
+  color: #90a4ae;
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+}
+
+.entity-setup-external-links {
+  text-align: right;
+  padding: 1rem 0.5rem 0;
+  font-size: 0.68rem;
+  letter-spacing: 0.14em;
+}
+
+.entity-setup-external-links a {
+  color: #00897b;
+  font-weight: 700;
+}
+
+.entity-setup-external-links .sep {
+  color: #cfd8dc;
+  margin: 0 0.5rem;
+}
+
+@media only screen and (max-width: 600px) {
+  .entity-setup-sidebar {
+    border-right: none;
+    border-bottom: 1px solid #e0e6ec;
+    min-height: 0;
+  }
+}
