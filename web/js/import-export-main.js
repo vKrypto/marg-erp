@@ -35,6 +35,28 @@
 
         refreshImportCounts();
 
+        function wireIeCsv(btnSel, exportFn, okMsg) {
+          $(btnSel).on("click", function () {
+            var C = window.MargInventoryCsv;
+            if (!C || typeof C[exportFn] !== "function") {
+              M.toast({ html: "CSV export module not loaded." });
+              return;
+            }
+            try {
+              C[exportFn](db);
+              M.toast({ html: okMsg });
+            } catch (err) {
+              M.toast({ html: err && err.message ? err.message : String(err) });
+            }
+          });
+        }
+        wireIeCsv("#btn-ie-csv-products", "exportProductsCsv", "Products CSV downloaded.");
+        wireIeCsv("#btn-ie-csv-vendors", "exportVendorsCsv", "Vendors CSV downloaded.");
+        wireIeCsv("#btn-ie-csv-customers", "exportCustomersCsv", "Customers CSV downloaded.");
+        wireIeCsv("#btn-ie-csv-lots", "exportLotsCsv", "Lots CSV downloaded.");
+        wireIeCsv("#btn-ie-csv-orders", "exportOrdersCsv", "Orders CSV downloaded.");
+        wireIeCsv("#btn-ie-csv-prescriptions", "exportPrescriptionsCsv", "Prescriptions CSV downloaded.");
+
         $("#btn-export-excel").on("click", function () {
           if (typeof MargInventoryExcel === "undefined" || typeof XLSX === "undefined") {
             M.toast({ html: "Excel library failed to load. Check network/CDN." });

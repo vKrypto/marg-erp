@@ -19,6 +19,24 @@
       .replace(/"/g, "&quot;");
   }
 
+  function headerDiscountLabelForHtml(o) {
+    var pct = o && o.order_header_discount_percent;
+    if (pct != null && Number(pct) > 0) {
+      var hn = Math.min(50, Math.max(0, Math.round(Number(pct))));
+      return "Header discount (" + escHtml(String(hn)) + "%)";
+    }
+    return "Header discount";
+  }
+
+  function gstDiscountLabelForHtml(o) {
+    var pct = o && o.order_header_discount_percent;
+    if (pct != null && Number(pct) > 0) {
+      var gn = Math.min(50, Math.max(0, Math.round(Number(pct))));
+      return "DISCOUNT (" + escHtml(String(gn)) + "%)";
+    }
+    return "DISCOUNT";
+  }
+
   function formatDisplayDate(iso) {
     if (!iso) return "—";
     var p = String(iso).slice(0, 10).split("-");
@@ -853,7 +871,7 @@
       '<th class="sn">SN.</th>' +
       "<th>PRODUCT NAME</th>" +
       "<th>PACK</th>" +
-      "<th>TABS</th>" +
+      "<th>QTY</th>" +
       "<th>BATCH</th>" +
       "<th>EXP.</th>" +
       "<th>MRP</th>" +
@@ -876,7 +894,9 @@
       "<tr><td class=\"lbl\">TOTAL</td><td class=\"inv-gst-amt\">" +
       paiseToRupeesFixed(subtotal) +
       "</td></tr>" +
-      "<tr><td class=\"lbl\">DISCOUNT</td><td class=\"inv-gst-amt\">" +
+      "<tr><td class=\"lbl\">" +
+      gstDiscountLabelForHtml(o) +
+      "</td><td class=\"inv-gst-amt\">" +
       paiseToRupeesFixed(disc) +
       "</td></tr>" +
       "<tr><td class=\"lbl\">ROUND OFF</td><td class=\"inv-gst-amt\">" +
@@ -1080,7 +1100,7 @@
       "</div></div>" +
       grid2Html +
       "<table class=\"inv-items\"><thead><tr>" +
-      "<th class=\"c\">#</th><th>Item</th><th class=\"r\">Tabs</th><th class=\"r\">Amount</th>" +
+      "<th class=\"c\">#</th><th>Item</th><th class=\"r\">Qty</th><th class=\"r\">Amount</th>" +
       "</tr></thead><tbody>" +
       rowsHtml +
       "</tbody></table>" +
@@ -1088,7 +1108,9 @@
       "<tr><td>Subtotal (lines)</td><td class=\"r\">" +
       formatInrPlain(subtotal) +
       "</td></tr>" +
-      "<tr><td>Header discount</td><td class=\"r\">− " +
+      "<tr><td>" +
+      headerDiscountLabelForHtml(o) +
+      "</td><td class=\"r\">− " +
       formatInrPlain(disc) +
       "</td></tr>" +
       '<tr class="grand"><td>Total</td><td class=\"r\">' +

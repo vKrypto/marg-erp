@@ -96,9 +96,8 @@
     $("#pd-code").text(p.code && String(p.code).trim() ? p.code : "—");
     $("#pd-barcode").text(p.barcode && String(p.barcode).trim() ? p.barcode : "—");
     $("#pd-pack").text(p.pack_label && String(p.pack_label).trim() ? p.pack_label : "—");
-    var strips = p.strips_per_pack != null ? p.strips_per_pack : 1;
     var units = p.units_per_strip != null ? String(p.units_per_strip) : "—";
-    $("#pd-units").text(String(strips) + " · " + units);
+    $("#pd-units").text(units);
 
     showLong($("#pd-desc-wrap"), $("#pd-desc"), p.description);
     showLong($("#pd-comp-wrap"), $("#pd-composition"), p.chemical_composition);
@@ -122,6 +121,9 @@
           "</td>" +
           "<td>" +
           esc(row.vendor_name || "—") +
+          "</td>" +
+          '<td class="right-align">' +
+          esc(String(row.strips_per_pack != null ? row.strips_per_pack : "—")) +
           "</td>" +
           '<td class="right-align">' +
           esc(String(row.quantity != null ? row.quantity : "—")) +
@@ -159,7 +161,7 @@
     });
     if (!lines.length) {
       $tb.append(
-        '<tr><td colspan="7" class="center grey-text" style="padding:2rem">No purchase lines yet for this product.</td></tr>'
+        '<tr><td colspan="8" class="center grey-text" style="padding:2rem">No purchase lines yet for this product.</td></tr>'
       );
     }
   }

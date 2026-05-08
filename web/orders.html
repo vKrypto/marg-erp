@@ -29,9 +29,14 @@
                 Sales orders with line totals (paise) and per-line dosing schedule — morning / noon / evening / night.
               </p>
             </div>
-            <button type="button" id="btn-new-order" class="btn waves-effect inv-btn-primary">
-              <i class="material-icons left">add_shopping_cart</i>New order
-            </button>
+            <div class="inv-panel-head-actions">
+              <button type="button" id="btn-order-csv-export" class="btn waves-effect inv-btn-outline">
+                <i class="material-icons left">download</i>Export CSV
+              </button>
+              <button type="button" id="btn-new-order" class="btn waves-effect inv-btn-primary">
+                <i class="material-icons left">add_shopping_cart</i>New order
+              </button>
+            </div>
           </header>
 
           <div class="inv-toolbar-row inv-order-toolbar">
@@ -79,7 +84,7 @@
             <div class="inv-panel-head-text">
               <h2 class="inv-panel-title" id="order-editor-title">New order</h2>
               <p class="inv-panel-subtitle" id="order-editor-sub">
-                Draft — line totals from tabs × latest strip price; header discount applies after line subtotal.
+                Draft — line totals from quantity × latest strip price; header discount applies after line subtotal.
               </p>
             </div>
             <div class="inv-panel-head-actions" style="flex-wrap: wrap; gap: 0.5rem">
@@ -160,15 +165,31 @@
                   Auto-assigned when you save
                 </p>
               </div>
-              <div class="inv-order-meta-block inv-order-meta-block--discount">
-                <label class="inv-order-field-label" for="order-discount-inr">Header discount (₹)</label>
-                <input
-                  type="text"
-                  id="order-discount-inr"
-                  class="browser-default inv-order-discount-input"
-                  placeholder="0.00"
-                  autocomplete="off"
-                />
+              <div class="inv-order-meta-discount-pair" aria-label="Flat discount and percentage discount">
+                <div class="inv-order-meta-block inv-order-meta-block--discount">
+                  <label class="inv-order-field-label" for="order-discount-flat-inr">Flat discount (₹)</label>
+                  <input
+                    type="text"
+                    id="order-discount-flat-inr"
+                    class="browser-default inv-order-discount-input"
+                    placeholder="0.00"
+                    autocomplete="off"
+                    inputmode="decimal"
+                  />
+                </div>
+                <div class="inv-order-meta-block inv-order-meta-block--discount">
+                  <label class="inv-order-field-label" for="order-discount-pct">Percentage discount (0–50)</label>
+                  <input
+                    type="number"
+                    id="order-discount-pct"
+                    class="browser-default inv-order-discount-input inv-order-discount-input--pct"
+                    placeholder="—"
+                    min="0"
+                    max="50"
+                    step="1"
+                    autocomplete="off"
+                  />
+                </div>
               </div>
             </div>
             <div class="row inv-order-form-row inv-order-form-row--notes">
@@ -182,10 +203,10 @@
           <div class="inv-order-line-items-block">
             <h3 class="inv-panel-title inv-order-line-items-title">Line items</h3>
             <p class="grey-text text-darken-1 inv-order-line-items-lead">
-              Enter tablets (tabs) per line. After you pick a product, the Tabs column shows <strong>how many tabs are
-              available in all lots</strong> (below the quantity). Confirming the order deducts that many tablets from
-              stock (partial strips allowed). Line amount uses units/strip from the product and the latest purchase strip
-              price. Line discount is flat rupees off that row. Money is stored in paise.
+              Enter quantity per line (in tablets/units for each product). After you pick a product, the Quantity column
+              shows <strong>how much stock is available in all lots</strong> (below the input). Confirming the order
+              deducts that quantity from stock (partial strips allowed). Line amount uses units/strip from the product and
+              the latest purchase strip price. Line discount is flat rupees off that row. Money is stored in paise.
             </p>
 
             <div class="inv-table-scroll inv-order-line-table-scroll">
@@ -200,10 +221,7 @@
                 <thead>
                   <tr>
                     <th scope="col">Product</th>
-                    <th scope="col" class="inv-olt-th-tabs">
-                      Tabs
-                      <span class="inv-olt-th-hint">Qty · tabs in all lots</span>
-                    </th>
+                    <th scope="col" class="inv-olt-th-tabs">Quantity</th>
                     <th scope="col">Line disc (₹)</th>
                     <th scope="col">Line ₹</th>
                     <th scope="col" class="inv-th-actions inv-olt-th-actions" aria-label="Row actions"></th>
@@ -271,6 +289,7 @@
     <script src="js/invoice-format-defaults.js"></script>
     <script src="js/invoice-html.js"></script>
     <script src="js/db.js"></script>
+    <script src="js/inventory-csv.js"></script>
     <script src="js/views/app-layout-view.js"></script>
     <script src="js/global-search.js"></script>
     <script src="js/marg-sync.js"></script>

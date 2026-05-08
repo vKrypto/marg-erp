@@ -254,10 +254,18 @@
 
     var $r1 = $("<div></div>").addClass("row lot-line-row-main").append(
       $("<div></div>")
-        .addClass("col s12 m5 lot-field-group lot-field-group--product")
+        .addClass("col s12 m4 lot-field-group lot-field-group--product")
         .append(
           $("<span></span>").addClass("lot-stacked-label").text("Product"),
           $wrap
+        ),
+      $("<div></div>")
+        .addClass("col s6 m2 lot-field-group")
+        .append(
+          $("<span></span>").addClass("lot-stacked-label").text("Strips / pack"),
+          $("<input>")
+            .attr({ type: "number", min: 1, step: 1, value: 1 })
+            .addClass("browser-default lot-strips-per-pack lot-stacked-input")
         ),
       $("<div></div>")
         .addClass("col s6 m2 lot-field-group")
@@ -276,7 +284,7 @@
             .addClass("browser-default lot-available lot-stacked-input")
         ),
       $("<div></div>")
-        .addClass("col s12 m3 lot-field-group")
+        .addClass("col s12 m2 lot-field-group")
         .append(
           $("<span></span>").addClass("lot-stacked-label").text("Delivered on"),
           $("<input>").attr({ type: "date" }).addClass("browser-default lot-delivered lot-stacked-input lot-stacked-input--date")
@@ -510,9 +518,15 @@
               });
               return;
             }
+            var spp = parseInt($r.find(".lot-strips-per-pack").val(), 10);
+            if (!(spp >= 1) || isNaN(spp)) {
+              M.toast({ html: "Strips per pack must be at least 1 on every line." });
+              return;
+            }
             lines.push({
               product_id: Number(pid),
               quantity: qty,
+              strips_per_pack: spp,
               available_count: avail,
               delivered_on: $r.find(".lot-delivered").val() || null,
               selling_price_paise: sp,

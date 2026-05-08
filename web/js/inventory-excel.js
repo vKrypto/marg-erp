@@ -275,19 +275,44 @@
     var r = normalizeRowKeys(o);
     var name = (r.name || r.product_name || r.medicine_name || "").trim();
     if (!name) return null;
+    var ptId = null;
+    if (r.product_type_id !== "" && r.product_type_id != null && String(r.product_type_id).trim() !== "") {
+      var pn = Number(r.product_type_id);
+      if (!isNaN(pn)) ptId = pn;
+    }
+    var ptLab = (r.type || r.product_type || r.product_type_label || r.category || "").trim();
     return {
       name: name,
       code: r.code || r.sku || null,
       barcode: r.barcode || null,
       pack_label: r.pack_label || r.pack || null,
-      strips_per_pack: r.strips_per_pack !== "" && r.strips_per_pack != null ? Number(r.strips_per_pack) : 1,
       units_per_strip:
         r.units_per_strip !== "" && r.units_per_strip != null ? Number(r.units_per_strip) : null,
       description: r.description || null,
       chemical_composition: r.chemical_composition || r.composition || null,
       general_recommendation: r.general_recommendation || null,
       where_to_use: r.where_to_use || r.indications || null,
+      product_type_id: ptId,
+      product_type_label: ptId ? null : ptLab || null,
     };
+  }
+
+  /** Resolve product_type_label → product_type_id before bulk insert. */
+  function resolveImportedProductTypes(rows, db) {
+    if (!rows || !rows.length || !db || typeof db.resolveOrCreateProductTypeId !== "function") return;
+    rows.forEach(function (p) {
+      var idRaw = p.product_type_id;
+      if (idRaw !== "" && idRaw != null && String(idRaw).trim() !== "") {
+        var n = Number(idRaw);
+        p.product_type_id = !isNaN(n) ? n : null;
+      } else {
+        p.product_type_id = null;
+      }
+      if (!p.product_type_id && p.product_type_label) {
+        p.product_type_id = db.resolveOrCreateProductTypeId(String(p.product_type_label).trim());
+      }
+      delete p.product_type_label;
+    });
   }
 
   function rowToVendor(o) {
@@ -353,6 +378,8 @@
       customer_phone: r.customer_phone || r.phone || null,
       order_date: r.order_date,
       order_discount_inr: r.order_discount_inr || r.discount_inr || "",
+      order_discount_percent:
+        r.order_discount_percent || r.header_discount_percent || r.header_discount_pct || "",
       status: r.status || "draft",
       notes: r.notes || null,
     };
@@ -469,15 +496,23 @@
             secret_notes: ln.secret_notes ? String(ln.secret_notes).trim() : null,
           };
         });
-        return db
-          .insertPrescription(
-            {
-              customer_id: cid,
-              doctor_name: h.doctor_name ? String(h.doctor_name).trim() : null,
-              doctor_phone: h.doctor_phone ? String(h.doctor_phone).trim() : null,
-            },
-            payload
-          )
+        var doUpsert =
+          typeof db.upsertPrescriptionFromImport === "function"
+            ? db.upsertPrescriptionFromImport.bind(db)
+            : function (hdr, pl) {
+                return db.insertPrescription(hdr, pl).then(function (id) {
+                  return { id: id, updated: false };
+                });
+              };
+        return doUpsert(
+          {
+            customer_id: cid,
+            import_key: key,
+            doctor_name: h.doctor_name ? String(h.doctor_name).trim() : null,
+            doctor_phone: h.doctor_phone ? String(h.doctor_phone).trim() : null,
+          },
+          payload
+        )
           .then(function () {
             count++;
           })
@@ -558,14 +593,44 @@
           }
           if (!ok) return Promise.resolve();
           var disc = rupeesToPaise(ord.order_discount_inr);
+          var pctImp =
+            ord.order_discount_percent != null && String(ord.order_discount_percent).trim() !== ""
+              ? Number(ord.order_discount_percent)
+              : NaN;
+          var usePct = !isNaN(pctImp) && pctImp > 0;
           var header = {
             customer_id: cid,
             order_date: cellToIsoDate(ord.order_date) || new Date().toISOString().slice(0, 10),
             order_number: onum,
-            order_discount_paise: disc == null ? 0 : Math.max(0, disc),
+            order_header_discount_flat_paise: usePct ? 0 : disc == null ? 0 : Math.max(0, disc),
+            order_header_discount_percent: usePct ? Math.min(50, Math.round(pctImp)) : null,
             notes: ord.notes || null,
             status: normalizeOrderStatus(ord.status),
           };
+          var existingOrd =
+            typeof db.getShopOrderIdAndStatusByOrderNumber === "function"
+              ? db.getShopOrderIdAndStatusByOrderNumber(onum)
+              : null;
+          if (existingOrd && existingOrd.status === "draft") {
+            return db
+              .updateOrderWithLines(existingOrd.id, header, dbLines)
+              .then(function () {
+                count++;
+              })
+              .catch(function (err) {
+                errors.push(onum + ": " + (err && err.message ? err.message : String(err)));
+              });
+          }
+          if (existingOrd && existingOrd.status !== "draft") {
+            errors.push(
+              "Order " +
+                onum +
+                ": already exists (status " +
+                existingOrd.status +
+                "). Skipped — only draft orders can be replaced on re-import."
+            );
+            return Promise.resolve();
+          }
           return db
             .insertOrderWithLines(header, dbLines)
             .then(function () {
@@ -595,6 +660,8 @@
       product_name: (r.product_name || r.medicine_name || "").trim() || null,
       quantity: stripQty,
       available_strips: availRaw,
+      strips_per_pack:
+        r.strips_per_pack !== "" && r.strips_per_pack != null ? Number(r.strips_per_pack) : null,
       delivered_on: cellToIsoDate(r.delivered_on),
       strip_mrp_inr:
         r.strip_mrp_inr || r.strip_mrp_rupees || r.mrp_inr || r.strip_mrp || null,
@@ -721,17 +788,22 @@
       chain = chain.then(function () {
         return db.importVendorsBatch(data.vendors);
       });
-      chain = chain.then(function (n) {
-        stats.vendors = n;
+      chain = chain.then(function (res) {
+        stats.vendors =
+          res && typeof res.inserted === "number" ? res.inserted + res.updated : Number(res) || 0;
       });
     }
 
     if (data.products.length) {
       chain = chain.then(function () {
+        resolveImportedProductTypes(data.products, db);
         return db.importProductsBatch(data.products);
       });
-      chain = chain.then(function (n) {
-        stats.products = n;
+      chain = chain.then(function (res) {
+        stats.products =
+          res && typeof res.inserted === "number"
+            ? res.inserted + res.updated
+            : Number(res) || 0;
       });
     }
 
@@ -739,8 +811,9 @@
       chain = chain.then(function () {
         return db.importCustomersBatch(data.customers);
       });
-      chain = chain.then(function (n) {
-        stats.customers = n;
+      chain = chain.then(function (res) {
+        stats.customers =
+          res && typeof res.inserted === "number" ? res.inserted + res.updated : Number(res) || 0;
       });
     }
 
@@ -750,7 +823,10 @@
       if (!ph.length) {
         return { count: 0, errors: [] };
       }
-      if (typeof db.insertPrescription !== "function") {
+      if (
+        typeof db.upsertPrescriptionFromImport !== "function" &&
+        typeof db.insertPrescription !== "function"
+      ) {
         return { count: 0, errors: ["Prescriptions sheet skipped: database module outdated."] };
       }
       return importPrescriptionsFromSheets(db, ph, pl);
@@ -834,9 +910,15 @@
               );
               return Promise.resolve();
             }
+            var sppLn =
+              ln.strips_per_pack != null && ln.strips_per_pack !== "" && !isNaN(Number(ln.strips_per_pack))
+                ? Math.round(Number(ln.strips_per_pack))
+                : 1;
+            if (!(sppLn >= 1)) sppLn = 1;
             dbLines.push({
               product_id: pid,
               quantity: qty,
+              strips_per_pack: sppLn,
               available_count: Math.round(av),
               delivered_on: ln.delivered_on || null,
               selling_price_paise: sp,
@@ -854,8 +936,16 @@
             delivered_by: lot.delivered_by || null,
             notes: lot.notes || null,
           };
-          return db
-            .insertLotWithLines(header, dbLines)
+          var lotNumTrim = lot.lot_number != null && String(lot.lot_number).trim() ? String(lot.lot_number).trim() : "";
+          var existingLotId =
+            lotNumTrim && typeof db.getLotIdByLotNumber === "function"
+              ? db.getLotIdByLotNumber(lotNumTrim)
+              : null;
+          var lotProm =
+            existingLotId != null
+              ? db.updateLotWithLines(existingLotId, header, dbLines)
+              : db.insertLotWithLines(header, dbLines);
+          return lotProm
             .then(function () {
               stats.lots++;
             })
@@ -940,9 +1030,29 @@
     return t || "entity";
   }
 
+  /** Type label for Products sheet (column <code>type</code> after <code>code</code>). */
+  function productTypeLabelForExportExcel(p, db) {
+    var lab = p.product_type_label;
+    if (lab != null && String(lab).trim() !== "") return String(lab).trim();
+    var pid = p.product_type_id;
+    if (pid != null && pid !== "" && db && typeof db.listProductTypes === "function") {
+      var want = Number(pid);
+      if (!isNaN(want)) {
+        var types = db.listProductTypes();
+        var i;
+        for (i = 0; i < types.length; i++) {
+          if (Number(types[i].id) === want) {
+            return types[i].label != null ? String(types[i].label).trim() : "";
+          }
+        }
+      }
+    }
+    return "";
+  }
+
   /**
    * Export current entity to .xlsx — same sheet names and columns as import / sample workbook.
-   * Prescriptions use stable keys RX-DB-{id} for round-trip.
+   * Prescriptions use import_key when set, else RX-DB-{id} (re-import updates the same row).
    */
   function exportEntityInventoryExcel(db) {
     if (typeof XLSX === "undefined") {
@@ -958,9 +1068,9 @@
       [
         "name",
         "code",
+        "type",
         "barcode",
         "pack_label",
-        "strips_per_pack",
         "units_per_strip",
         "description",
         "chemical_composition",
@@ -972,9 +1082,9 @@
       products.push([
         p.name || "",
         p.code || "",
+        productTypeLabelForExportExcel(p, db),
         p.barcode || "",
         p.pack_label || "",
-        p.strips_per_pack != null ? Number(p.strips_per_pack) : 1,
         p.units_per_strip != null && p.units_per_strip !== "" ? Number(p.units_per_strip) : "",
         p.description || "",
         p.chemical_composition || "",
@@ -1034,7 +1144,11 @@
     db.listPrescriptions({}).forEach(function (pr) {
       var pack = db.getPrescription(pr.id);
       if (!pack || !pack.lines || !pack.lines.length) return;
-      var rxKey = "RX-DB-" + pr.id;
+      var hdr = pack.header || {};
+      var rxKey =
+        hdr.import_key != null && String(hdr.import_key).trim()
+          ? String(hdr.import_key).trim()
+          : "RX-DB-" + pr.id;
       prescriptionsSheet.push([
         rxKey,
         pr.customer_name || "",
@@ -1060,6 +1174,7 @@
         "customer_phone",
         "order_date",
         "order_discount_inr",
+        "order_discount_percent",
         "status",
         "notes",
       ],
@@ -1089,6 +1204,9 @@
         o.customer_phone || "",
         o.order_date || "",
         paiseToInrExport(o.order_discount_paise),
+        o.order_header_discount_percent != null && Number(o.order_header_discount_percent) > 0
+          ? Math.min(50, Math.round(Number(o.order_header_discount_percent)))
+          : "",
         o.status || "draft",
         o.notes || "",
       ]);
@@ -1128,6 +1246,7 @@
         "lot_number",
         "product_code",
         "product_name",
+        "strips_per_pack",
         "strips",
         "available_strips",
         "delivered_on",
@@ -1157,6 +1276,7 @@
           lot.lot_number || "",
           ln.product_code || "",
           ln.product_name || "",
+          ln.strips_per_pack != null ? Number(ln.strips_per_pack) : 1,
           q,
           av,
           ln.delivered_on || "",
@@ -1191,9 +1311,9 @@
       [
         "name",
         "code",
+        "type",
         "barcode",
         "pack_label",
-        "strips_per_pack",
         "units_per_strip",
         "description",
         "chemical_composition",
@@ -1203,9 +1323,9 @@
       [
         "Paracetamol 500 mg",
         "PARA-500",
+        "Tab",
         "8901000000001",
         "1*10",
-        1,
         10,
         "Tablet",
         "Paracetamol 500 mg",
@@ -1215,9 +1335,9 @@
       [
         "Amoxicillin 500 mg",
         "AMOX-500",
+        "Tab",
         "8901000000002",
         "1*15",
-        1,
         15,
         "Capsule",
         "Amoxicillin trihydrate",
@@ -1227,9 +1347,9 @@
       [
         "Omeprazole 20 mg",
         "OME-20",
+        "Tab",
         "8901000000003",
         "1*15",
-        1,
         15,
         "Capsule",
         "Omeprazole",
@@ -1239,9 +1359,9 @@
       [
         "ORS Sachet",
         "ORS-200",
+        "Tab",
         "8901000000004",
         "1*1",
-        1,
         1,
         "Powder",
         "Glucose + electrolytes",
@@ -1251,9 +1371,9 @@
       [
         "Azithromycin 500 mg",
         "AZI-500",
+        "Tab",
         "8901000000005",
         "1*3",
-        1,
         3,
         "Tablet",
         "Azithromycin",
@@ -1263,9 +1383,9 @@
       [
         "Cetirizine 10 mg",
         "CET-10",
+        "Tab",
         "8901000000006",
         "1*10",
-        1,
         10,
         "Tablet",
         "Cetirizine",
@@ -1275,9 +1395,9 @@
       [
         "Ibuprofen 400 mg",
         "IBU-400",
+        "Tab",
         "8901000000007",
         "1*10",
-        1,
         10,
         "Tablet",
         "Ibuprofen",
@@ -1287,9 +1407,9 @@
       [
         "Ranitidine 150 mg",
         "RAN-150",
+        "Tab",
         "8901000000008",
         "1*20",
-        1,
         20,
         "Tablet",
         "Ranitidine",
@@ -1299,9 +1419,9 @@
       [
         "Metformin 500 mg",
         "MET-500",
+        "Tab",
         "8901000000009",
         "1*10",
-        1,
         10,
         "Tablet",
         "Metformin HCl",
@@ -1311,9 +1431,9 @@
       [
         "Glimepiride 1 mg",
         "GLI-1",
+        "Tab",
         "8901000000010",
         "1*10",
-        1,
         10,
         "Tablet",
         "Glimepiride",
@@ -1323,9 +1443,9 @@
       [
         "Atorvastatin 10 mg",
         "ATO-10",
+        "Tab",
         "8901000000011",
         "1*10",
-        1,
         10,
         "Tablet",
         "Atorvastatin",
@@ -1335,9 +1455,9 @@
       [
         "Losartan 50 mg",
         "LOS-50",
+        "Tab",
         "8901000000012",
         "1*10",
-        1,
         10,
         "Tablet",
         "Losartan potassium",
@@ -1347,9 +1467,9 @@
       [
         "Pantoprazole 40 mg",
         "PAN-40",
+        "Tab",
         "8901000000013",
         "1*10",
-        1,
         10,
         "Tablet",
         "Pantoprazole",
@@ -1359,9 +1479,9 @@
       [
         "Dextromethorphan syrup 100 ml",
         "DEXT-SYR",
+        "Syrup",
         "8901000000014",
         "1 bottle",
-        1,
         1,
         "Syrup",
         "Dextromethorphan",
@@ -1371,9 +1491,9 @@
       [
         "Cough expectorant 100 ml",
         "COUGH-SYR",
+        "Syrup",
         "8901000000015",
         "1 bottle",
-        1,
         1,
         "Syrup",
         "Ambroxol + Guaifenesin",
@@ -1383,6 +1503,7 @@
       [
         "Vitamin D3 60k IU",
         "VITD-60K",
+        "Tab",
         "8901000000016",
         "4*1",
         4,
@@ -1395,9 +1516,9 @@
       [
         "Calcium + Vitamin D3 tablet",
         "CAL-D3",
+        "Tab",
         "8901000000017",
         "1*15",
-        1,
         15,
         "Tablet",
         "Calcium carbonate + D3",
@@ -1407,9 +1528,9 @@
       [
         "Povidone iodine 5% ointment",
         "BETA-OINT",
+        "Ointment",
         "8901000000018",
         "1*20 g",
-        1,
         1,
         "Ointment",
         "Povidone iodine",
@@ -1419,9 +1540,9 @@
       [
         "Metronidazole 400 mg",
         "METRO-400",
+        "Tab",
         "8901000000019",
         "1*10",
-        1,
         10,
         "Tablet",
         "Metronidazole",
@@ -1431,9 +1552,9 @@
       [
         "Levocetirizine 5 mg",
         "LEVO-5",
+        "Tab",
         "8901000000020",
         "1*10",
-        1,
         10,
         "Tablet",
         "Levocetirizine",
@@ -1553,32 +1674,33 @@
         "lot_number",
         "product_code",
         "product_name",
+        "strips_per_pack",
         "strips",
         "available_strips",
         "delivered_on",
         "selling_price_inr",
       ],
-      ["INV-2025-001", "PARA-500", "", 120, 120, "2025-03-03", 35.0],
-      ["INV-2025-001", "AMOX-500", "", 60, 60, "2025-03-03", 125.5],
-      ["INV-2025-001", "OME-20", "", 90, 90, "2025-03-03", 48.0],
-      ["INV-2025-002", "ORS-200", "", 200, 200, "2025-03-12", 22.0],
-      ["INV-2025-002", "AZI-500", "", 30, 30, "2025-03-12", 180.0],
-      ["INV-2025-002", "PARA-500", "", 50, 50, "2025-03-12", 35.0],
-      ["INV-2025-003", "CET-10", "", 100, 100, "2025-03-16", 12.5],
-      ["INV-2025-003", "IBU-400", "", 80, 80, "2025-03-16", 18.0],
-      ["INV-2025-003", "RAN-150", "", 60, 60, "2025-03-16", 8.5],
-      ["INV-2025-003", "MET-500", "", 200, 200, "2025-03-16", 4.2],
-      ["INV-2025-003", "GLI-1", "", 90, 90, "2025-03-16", 6.75],
-      ["INV-2025-003", "ATO-10", "", 70, 70, "2025-03-16", 45.0],
-      ["INV-2025-003", "LOS-50", "", 50, 50, "2025-03-16", 28.0],
-      ["INV-2025-003", "PAN-40", "", 60, 60, "2025-03-16", 52.0],
-      ["INV-2025-003", "DEXT-SYR", "", 40, 40, "2025-03-16", 95.0],
-      ["INV-2025-003", "COUGH-SYR", "", 35, 35, "2025-03-16", 88.0],
-      ["INV-2025-003", "VITD-60K", "", 24, 24, "2025-03-16", 42.0],
-      ["INV-2025-003", "CAL-D3", "", 100, 100, "2025-03-16", 5.5],
-      ["INV-2025-003", "BETA-OINT", "", 48, 48, "2025-03-16", 65.0],
-      ["INV-2025-003", "METRO-400", "", 72, 72, "2025-03-16", 9.25],
-      ["INV-2025-003", "LEVO-5", "", 84, 84, "2025-03-16", 14.5],
+      ["INV-2025-001", "PARA-500", "", 1, 120, 120, "2025-03-03", 35.0],
+      ["INV-2025-001", "AMOX-500", "", 1, 60, 60, "2025-03-03", 125.5],
+      ["INV-2025-001", "OME-20", "", 1, 90, 90, "2025-03-03", 48.0],
+      ["INV-2025-002", "ORS-200", "", 1, 200, 200, "2025-03-12", 22.0],
+      ["INV-2025-002", "AZI-500", "", 1, 30, 30, "2025-03-12", 180.0],
+      ["INV-2025-002", "PARA-500", "", 1, 50, 50, "2025-03-12", 35.0],
+      ["INV-2025-003", "CET-10", "", 1, 100, 100, "2025-03-16", 12.5],
+      ["INV-2025-003", "IBU-400", "", 1, 80, 80, "2025-03-16", 18.0],
+      ["INV-2025-003", "RAN-150", "", 1, 60, 60, "2025-03-16", 8.5],
+      ["INV-2025-003", "MET-500", "", 1, 200, 200, "2025-03-16", 4.2],
+      ["INV-2025-003", "GLI-1", "", 1, 90, 90, "2025-03-16", 6.75],
+      ["INV-2025-003", "ATO-10", "", 1, 70, 70, "2025-03-16", 45.0],
+      ["INV-2025-003", "LOS-50", "", 1, 50, 50, "2025-03-16", 28.0],
+      ["INV-2025-003", "PAN-40", "", 1, 60, 60, "2025-03-16", 52.0],
+      ["INV-2025-003", "DEXT-SYR", "", 1, 40, 40, "2025-03-16", 95.0],
+      ["INV-2025-003", "COUGH-SYR", "", 1, 35, 35, "2025-03-16", 88.0],
+      ["INV-2025-003", "VITD-60K", "", 1, 24, 24, "2025-03-16", 42.0],
+      ["INV-2025-003", "CAL-D3", "", 1, 100, 100, "2025-03-16", 5.5],
+      ["INV-2025-003", "BETA-OINT", "", 1, 48, 48, "2025-03-16", 65.0],
+      ["INV-2025-003", "METRO-400", "", 1, 72, 72, "2025-03-16", 9.25],
+      ["INV-2025-003", "LEVO-5", "", 1, 84, 84, "2025-03-16", 14.5],
     ];
 
     var customers = [
@@ -1723,6 +1845,7 @@
         "customer_phone",
         "order_date",
         "order_discount_inr",
+        "order_discount_percent",
         "status",
         "notes",
       ],
@@ -1732,6 +1855,7 @@
         "9876501001",
         "2025-03-20",
         0,
+        "",
         "confirmed",
         "Sample walk-in — fever and pain",
       ],
@@ -1741,6 +1865,7 @@
         "9876501002",
         "2025-03-21",
         50,
+        "",
         "confirmed",
         "Header discount ₹50; line totals are pre-discount subtotal",
       ],
@@ -1750,6 +1875,7 @@
         "9123405003",
         "2025-03-22",
         0,
+        "",
         "confirmed",
         "Antibiotic course",
       ],
@@ -1759,6 +1885,7 @@
         "9876501004",
         "2025-03-23",
         25,
+        "",
         "confirmed",
         "GERD follow-up",
       ],
@@ -1768,6 +1895,7 @@
         "9876501005",
         "2025-03-24",
         0,
+        "",
         "draft",
         "Pending payment",
       ],
@@ -1777,6 +1905,7 @@
         "9876501006",
         "2025-03-25",
         0,
+        "",
         "confirmed",
         "Allergy season pack",
       ],
@@ -1786,6 +1915,7 @@
         "9876501007",
         "2025-03-26",
         10,
+        "",
         "confirmed",
         "Cough and cold",
       ],
@@ -1795,6 +1925,7 @@
         "9876501008",
         "2025-03-27",
         0,
+        "",
         "confirmed",
         "Vitamin refill",
       ],
@@ -1804,6 +1935,7 @@
         "9876501009",
         "2025-03-28",
         0,
+        "",
         "confirmed",
         "Diabetes maintenance",
       ],
@@ -1813,6 +1945,7 @@
         "9876501010",
         "2025-03-29",
         0,
+        "",
         "confirmed",
         "Mixed OTC",
       ],
@@ -1822,6 +1955,7 @@
         "9876501011",
         "2025-03-30",
         15,
+        "",
         "confirmed",
         "First-aid + antiseptic",
       ],

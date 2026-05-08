@@ -139,23 +139,415 @@
     }, 2000);
   }
 
+  function escapeCsvCell(val) {
+    var s = val == null ? "" : String(val);
+    if (/[",\r\n]/.test(s)) {
+      return '"' + s.replace(/"/g, '""') + '"';
+    }
+    return s;
+  }
+
+  function csvLineFromCells(cells) {
+    var parts = [];
+    var i;
+    for (i = 0; i < cells.length; i++) {
+      parts.push(escapeCsvCell(cells[i]));
+    }
+    return parts.join(",");
+  }
+
+  function exportEntitySlug(db) {
+    var ent = db.getCurrentEntity && db.getCurrentEntity();
+    var raw = ent && ent.entity_name ? String(ent.entity_name) : "entity";
+    return raw
+      .trim()
+      .replace(/[^a-z0-9-_]+/gi, "-")
+      .replace(/^-+|-+$/g, "")
+      .slice(0, 48) || "entity";
+  }
+
+  function isoDateStamp() {
+    return new Date().toISOString().slice(0, 10);
+  }
+
+  function paiseToInrExportStr(p) {
+    var n = (Number(p) || 0) / 100;
+    return String(Math.round(n * 100) / 100);
+  }
+
+  /** Type label for CSV/Excel export when JOIN omits or sql.js drops alias. */
+  function productTypeLabelForExport(p, db) {
+    var lab = p.product_type_label;
+    if (lab != null && String(lab).trim() !== "") return String(lab).trim();
+    var pid = p.product_type_id;
+    if (pid != null && pid !== "" && db && typeof db.listProductTypes === "function") {
+      var want = Number(pid);
+      if (!isNaN(want)) {
+        var types = db.listProductTypes();
+        var i;
+        for (i = 0; i < types.length; i++) {
+          if (Number(types[i].id) === want) {
+            return types[i].label != null ? String(types[i].label).trim() : "";
+          }
+        }
+      }
+    }
+    return "";
+  }
+
+  function exportProductsCsv(db) {
+    var rows = [];
+    var header = [
+      "name",
+      "code",
+      "type",
+      "barcode",
+      "pack_label",
+      "units_per_strip",
+      "description",
+      "chemical_composition",
+      "general_recommendation",
+      "where_to_use",
+    ];
+    rows.push(csvLineFromCells(header));
+    db.listProducts("", "all").forEach(function (p) {
+      rows.push(
+        csvLineFromCells([
+          p.name || "",
+          p.code || "",
+          productTypeLabelForExport(p, db),
+          p.barcode || "",
+          p.pack_label || "",
+          p.units_per_strip != null && p.units_per_strip !== "" ? String(p.units_per_strip) : "",
+          p.description || "",
+          p.chemical_composition || "",
+          p.general_recommendation || "",
+          p.where_to_use || "",
+        ])
+      );
+    });
+    downloadText(
+      "pharmapulse-products-" + exportEntitySlug(db) + "-" + isoDateStamp() + ".csv",
+      rows.join("\r\n")
+    );
+  }
+
+  function exportVendorsCsv(db) {
+    var rows = [];
+    var header = [
+      "name",
+      "phone",
+      "email",
+      "city",
+      "state",
+      "pincode",
+      "gstin",
+      "address_line1",
+      "address_line2",
+      "notes",
+    ];
+    rows.push(csvLineFromCells(header));
+    db.listVendors().forEach(function (v) {
+      rows.push(
+        csvLineFromCells([
+          v.name || "",
+          v.phone || "",
+          v.email || "",
+          v.city || "",
+          v.state || "",
+          v.pincode || "",
+          v.gstin || "",
+          v.address_line1 || "",
+          v.address_line2 || "",
+          v.notes || "",
+        ])
+      );
+    });
+    downloadText(
+      "pharmapulse-vendors-" + exportEntitySlug(db) + "-" + isoDateStamp() + ".csv",
+      rows.join("\r\n")
+    );
+  }
+
+  function exportCustomersCsv(db) {
+    var rows = [];
+    var header = [
+      "name",
+      "phone",
+      "email",
+      "city",
+      "state",
+      "pincode",
+      "address_line1",
+      "address_line2",
+      "notes",
+    ];
+    rows.push(csvLineFromCells(header));
+    db.listCustomers("").forEach(function (c) {
+      rows.push(
+        csvLineFromCells([
+          c.name || "",
+          c.phone || "",
+          c.email || "",
+          c.city || "",
+          c.state || "",
+          c.pincode || "",
+          c.address_line1 || "",
+          c.address_line2 || "",
+          c.notes || "",
+        ])
+      );
+    });
+    downloadText(
+      "pharmapulse-customers-" + exportEntitySlug(db) + "-" + isoDateStamp() + ".csv",
+      rows.join("\r\n")
+    );
+  }
+
+  function exportLotsCsv(db) {
+    var rows = [];
+    var header = [
+      "lot_number",
+      "vendor",
+      "delivered",
+      "lines",
+      "product_code",
+      "strips",
+      "selling_price_inr",
+      "strip_mrp_inr",
+      "notes",
+    ];
+    rows.push(csvLineFromCells(header));
+    db.listLots().forEach(function (lot) {
+      var lotLines = db.getLotLines(lot.id);
+      var n = lotLines.length;
+      var delivered = lot.delivered_date || lot.lot_date || "";
+      var vendorLab = lot.vendor_name || "";
+      var lotNum = lot.lot_number || "";
+      var i;
+      for (i = 0; i < lotLines.length; i++) {
+        var ln = lotLines[i];
+        var isFirst = i === 0;
+        rows.push(
+          csvLineFromCells([
+            isFirst ? lotNum : "",
+            isFirst ? vendorLab : "",
+            isFirst ? delivered : "",
+            isFirst ? String(n) : "",
+            ln.product_code || "",
+            String(Number(ln.quantity) || 0),
+            paiseToInrExportStr(ln.selling_price_paise),
+            paiseToInrExportStr(ln.strip_mrp_paise),
+            ln.line_notes || "",
+          ])
+        );
+      }
+    });
+    downloadText(
+      "pharmapulse-lots-" + exportEntitySlug(db) + "-" + isoDateStamp() + ".csv",
+      rows.join("\r\n")
+    );
+  }
+
+  function safeOrderNumberForExport(o) {
+    if (o.order_number && String(o.order_number).trim()) return String(o.order_number).trim();
+    return "ORD-" + String(o.id).padStart(6, "0");
+  }
+
+  function exportOrdersCsv(db) {
+    var rows = [];
+    var header = [
+      "row_type",
+      "order_number",
+      "customer_name",
+      "customer_phone",
+      "order_date",
+      "order_discount_inr",
+      "status",
+      "notes",
+      "product_code",
+      "product_name",
+      "quantity",
+      "line_total_inr",
+      "line_notes",
+      "morning",
+      "noon",
+      "evening",
+      "night",
+      "schedule_remarks",
+      "header_discount_flat_inr",
+      "header_discount_percent",
+    ];
+    rows.push(csvLineFromCells(header));
+    db.listOrders({}).forEach(function (o) {
+      var onum = safeOrderNumberForExport(o);
+      rows.push(
+        csvLineFromCells([
+          "header",
+          onum,
+          o.customer_name || "",
+          o.customer_phone || "",
+          o.order_date || "",
+          paiseToInrExportStr(o.order_discount_paise),
+          o.status || "",
+          o.notes || "",
+          "",
+          "",
+          "",
+          "",
+          "",
+          "",
+          "",
+          "",
+          "",
+          "",
+          paiseToInrExportStr(o.order_header_discount_flat_paise),
+          o.order_header_discount_percent != null && Number(o.order_header_discount_percent) > 0
+            ? String(Math.min(50, Math.round(Number(o.order_header_discount_percent))))
+            : "",
+        ])
+      );
+      var lines = db.getOrderLines(o.id);
+      lines.forEach(function (ln) {
+        var sch = db.getOrderLineSchedule(ln.id);
+        rows.push(
+          csvLineFromCells([
+            "line",
+            onum,
+            "",
+            "",
+            "",
+            "",
+            "",
+            "",
+            ln.product_code || "",
+            ln.product_name || "",
+            String(Number(ln.quantity) || 0),
+            paiseToInrExportStr(ln.total_price_paise),
+            ln.line_notes || "",
+            sch && Number(sch.in_morning) === 1 ? "1" : "0",
+            sch && Number(sch.in_noon) === 1 ? "1" : "0",
+            sch && Number(sch.in_evening) === 1 ? "1" : "0",
+            sch && Number(sch.in_night) === 1 ? "1" : "0",
+            sch && sch.remarks ? String(sch.remarks) : "",
+            "",
+            "",
+          ])
+        );
+      });
+    });
+    downloadText(
+      "pharmapulse-orders-" + exportEntitySlug(db) + "-" + isoDateStamp() + ".csv",
+      rows.join("\r\n")
+    );
+  }
+
+  function exportPrescriptionsCsv(db) {
+    if (typeof db.listPrescriptions !== "function" || typeof db.getPrescription !== "function") {
+      return;
+    }
+    var rows = [];
+    var header = [
+      "row_type",
+      "rx_key",
+      "customer_name",
+      "customer_phone",
+      "doctor_name",
+      "doctor_phone",
+      "line_status",
+      "line_type",
+      "line_notes",
+      "line_secret",
+    ];
+    rows.push(csvLineFromCells(header));
+    db.listPrescriptions({}).forEach(function (pr) {
+      var pack = db.getPrescription(pr.id);
+      if (!pack || !pack.header) return;
+      var h = pack.header;
+      var rxKey =
+        h.import_key != null && String(h.import_key).trim()
+          ? String(h.import_key).trim()
+          : "RX-DB-" + pr.id;
+      rows.push(
+        csvLineFromCells([
+          "header",
+          rxKey,
+          h.customer_name || "",
+          h.customer_phone || "",
+          h.doctor_name || "",
+          h.doctor_phone || "",
+          "",
+          "",
+          "",
+          "",
+        ])
+      );
+      var lines = pack.lines || [];
+      lines.forEach(function (ln) {
+        rows.push(
+          csvLineFromCells([
+            "line",
+            rxKey,
+            "",
+            "",
+            "",
+            "",
+            ln.prescription_status || "draft",
+            ln.prescription_type || "",
+            ln.prescription_notes || "",
+            ln.secret_notes || "",
+          ])
+        );
+      });
+    });
+    downloadText(
+      "pharmapulse-prescriptions-" + exportEntitySlug(db) + "-" + isoDateStamp() + ".csv",
+      rows.join("\r\n")
+    );
+  }
+
   function productRowFromObj(o) {
     var name = o.name || o.product_name || o.medicine_name || "";
     if (!String(name).trim()) return null;
+    var ptId = null;
+    var idRaw = o.product_type_id;
+    if (idRaw !== "" && idRaw != null && String(idRaw).trim() !== "") {
+      var pn = Number(idRaw);
+      if (!isNaN(pn)) ptId = pn;
+    }
+    var ptLab = (o.type || o.product_type || o.product_type_label || o.category || "").trim();
     return {
       name: String(name).trim(),
       code: o.code || o.sku || null,
       barcode: o.barcode || null,
       pack_label: o.pack_label || o.pack || null,
-      strips_per_pack:
-        o.strips_per_pack !== "" && o.strips_per_pack != null ? Number(o.strips_per_pack) : 1,
       units_per_strip:
         o.units_per_strip !== "" && o.units_per_strip != null ? Number(o.units_per_strip) : null,
       description: o.description || null,
       chemical_composition: o.chemical_composition || o.composition || null,
       general_recommendation: o.general_recommendation || null,
       where_to_use: o.where_to_use || null,
+      product_type_id: ptId,
+      product_type_label: ptId ? null : ptLab || null,
     };
+  }
+
+  function resolveImportedProductType(p, db) {
+    if (!p || !db || typeof db.resolveOrCreateProductTypeId !== "function") {
+      delete p.product_type_label;
+      return;
+    }
+    var idRaw = p.product_type_id;
+    if (idRaw !== "" && idRaw != null && String(idRaw).trim() !== "") {
+      var n = Number(idRaw);
+      p.product_type_id = !isNaN(n) ? n : null;
+    } else {
+      p.product_type_id = null;
+    }
+    if (!p.product_type_id && p.product_type_label) {
+      p.product_type_id = db.resolveOrCreateProductTypeId(String(p.product_type_label).trim());
+    }
+    delete p.product_type_label;
   }
 
   function vendorRowFromObj(o) {
@@ -301,8 +693,18 @@
     if (!items.length) {
       return Promise.reject(new Error("No valid product rows."));
     }
-    return db.importProductsBatch(items).then(function (n) {
-      return { ok: n, errors: errors };
+    items.forEach(function (p) {
+      resolveImportedProductType(p, db);
+    });
+    return db.importProductsBatch(items).then(function (res) {
+      var ins = res && typeof res.inserted === "number" ? res.inserted : 0;
+      var upd = res && typeof res.updated === "number" ? res.updated : 0;
+      return {
+        ok: ins + upd,
+        inserted: ins,
+        updated: upd,
+        errors: errors,
+      };
     });
   }
 
@@ -325,8 +727,10 @@
     if (!items.length) {
       return Promise.reject(new Error("No valid customer rows."));
     }
-    return db.importCustomersBatch(items).then(function (n) {
-      return { ok: n, errors: errors };
+    return db.importCustomersBatch(items).then(function (res) {
+      var ins = res && typeof res.inserted === "number" ? res.inserted : 0;
+      var upd = res && typeof res.updated === "number" ? res.updated : 0;
+      return { ok: ins + upd, inserted: ins, updated: upd, errors: errors };
     });
   }
 
@@ -349,8 +753,10 @@
     if (!items.length) {
       return Promise.reject(new Error("No valid vendor rows."));
     }
-    return db.importVendorsBatch(items).then(function (n) {
-      return { ok: n, errors: errors };
+    return db.importVendorsBatch(items).then(function (res) {
+      var ins = res && typeof res.inserted === "number" ? res.inserted : 0;
+      var upd = res && typeof res.updated === "number" ? res.updated : 0;
+      return { ok: ins + upd, inserted: ins, updated: upd, errors: errors };
     });
   }
 
@@ -419,7 +825,6 @@
         "name",
         "code",
         "pack_label",
-        "strips_per_pack",
         "units_per_strip",
       ]);
     }
@@ -586,10 +991,17 @@
 
     var errors = [];
     var ok = 0;
+    var lotsInserted = 0;
+    var lotsUpdated = 0;
 
     function processLotIndex(i) {
       if (i >= order.length) {
-        return Promise.resolve({ ok: ok, errors: errors });
+        return Promise.resolve({
+          ok: ok,
+          inserted: lotsInserted,
+          updated: lotsUpdated,
+          errors: errors,
+        });
       }
       var lotNum = order[i];
       var group = byLot[lotNum];
@@ -686,10 +1098,18 @@
           return processLotIndex(i + 1);
         }
 
-        return db
-          .insertLotWithLines(header, lines)
+        var existingLotId =
+          typeof db.getLotIdByLotNumber === "function" ? db.getLotIdByLotNumber(lotNum) : null;
+        var lotPromise =
+          existingLotId != null
+            ? db.updateLotWithLines(existingLotId, header, lines)
+            : db.insertLotWithLines(header, lines);
+
+        return lotPromise
           .then(function () {
             ok++;
+            if (existingLotId != null) lotsUpdated++;
+            else lotsInserted++;
             return processLotIndex(i + 1);
           })
           .catch(function (err) {
@@ -703,9 +1123,9 @@
   }
 
   var SAMPLE_PRODUCTS =
-    "name,code,barcode,pack_label,strips_per_pack,units_per_strip,description\n" +
-    "Sample Paracetamol 500mg,PARA-500,,1*15,1,10,Pain / fever\n" +
-    "Sample Amoxicillin 500mg,AMOX-500,,1*10,1,8,Antibiotic\n";
+    "name,code,type,barcode,pack_label,units_per_strip,description\n" +
+    "Sample Paracetamol 500mg,PARA-500,Tab,,1*15,10,Pain / fever\n" +
+    "Sample Amoxicillin 500mg,AMOX-500,Tab,,1*10,8,Antibiotic\n";
 
   var SAMPLE_VENDORS =
     "name,phone,email,city,state,pincode,gstin,address_line1,notes\n" +
@@ -739,6 +1159,12 @@
     importVendors: importVendors,
     importLots: importLots,
     importCustomers: importCustomers,
+    exportProductsCsv: exportProductsCsv,
+    exportVendorsCsv: exportVendorsCsv,
+    exportCustomersCsv: exportCustomersCsv,
+    exportLotsCsv: exportLotsCsv,
+    exportOrdersCsv: exportOrdersCsv,
+    exportPrescriptionsCsv: exportPrescriptionsCsv,
     downloadSample: downloadText,
     validateSamples: validateSamples,
     samples: {

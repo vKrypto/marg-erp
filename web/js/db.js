@@ -197,6 +197,7 @@
         "  lot_id INTEGER NOT NULL REFERENCES lot (id) ON DELETE CASCADE,",
         "  product_id INTEGER NOT NULL REFERENCES product (id) ON DELETE RESTRICT,",
         "  quantity INTEGER NOT NULL CHECK (quantity > 0),",
+        "  strips_per_pack INTEGER NOT NULL DEFAULT 1 CHECK (strips_per_pack >= 1),",
         "  available_count INTEGER NOT NULL CHECK (available_count >= 0 AND available_count <= quantity),",
         "  delivered_on TEXT,",
         "  selling_price_paise INTEGER NOT NULL,",
@@ -243,6 +244,8 @@
         "  order_date TEXT NOT NULL,",
         "  order_total_price_paise INTEGER NOT NULL DEFAULT 0,",
         "  order_discount_paise INTEGER NOT NULL DEFAULT 0 CHECK (order_discount_paise >= 0),",
+        "  order_header_discount_flat_paise INTEGER NOT NULL DEFAULT 0 CHECK (order_header_discount_flat_paise >= 0),",
+        "  order_header_discount_percent INTEGER,",
         "  status TEXT NOT NULL DEFAULT 'draft' CHECK (status IN ('draft', 'confirmed', 'cancelled')),",
         "  notes TEXT,",
         "  created_at TEXT NOT NULL,",
@@ -270,12 +273,23 @@
         "  in_night INTEGER NOT NULL DEFAULT 0 CHECK (in_night IN (0, 1)),",
         "  remarks TEXT",
         ");",
+        "CREATE TABLE IF NOT EXISTS doctor (",
+        "  id INTEGER PRIMARY KEY AUTOINCREMENT,",
+        "  entity_id INTEGER NOT NULL REFERENCES entity (id) ON DELETE CASCADE,",
+        "  name TEXT NOT NULL,",
+        "  phone TEXT,",
+        "  created_at TEXT NOT NULL,",
+        "  updated_at TEXT NOT NULL",
+        ");",
+        "CREATE INDEX IF NOT EXISTS idx_doctor_entity_name ON doctor (entity_id, name);",
         "CREATE TABLE IF NOT EXISTS prescription (",
         "  id INTEGER PRIMARY KEY AUTOINCREMENT,",
         "  entity_id INTEGER NOT NULL REFERENCES entity (id) ON DELETE CASCADE,",
         "  customer_id INTEGER NOT NULL REFERENCES customer (id) ON DELETE RESTRICT,",
+        "  doctor_id INTEGER REFERENCES doctor (id) ON DELETE SET NULL,",
         "  doctor_name TEXT,",
         "  doctor_phone TEXT,",
+        "  import_key TEXT,",
         "  created_at TEXT NOT NULL,",
         "  updated_at TEXT NOT NULL",
         ");",
@@ -322,6 +336,25 @@
       /* duplicate column or prescription table missing on ancient DB */
     }
     try {
+      db.run(
+        "ALTER TABLE shop_order ADD COLUMN order_header_discount_flat_paise INTEGER NOT NULL DEFAULT 0"
+      );
+    } catch (e) {
+      /* duplicate column */
+    }
+    try {
+      db.run("ALTER TABLE shop_order ADD COLUMN order_header_discount_percent INTEGER");
+    } catch (e) {
+      /* duplicate column */
+    }
+    try {
+      db.run(
+        "UPDATE shop_order SET order_header_discount_flat_paise = order_discount_paise WHERE COALESCE(order_header_discount_percent, 0) = 0 AND COALESCE(order_header_discount_flat_paise, 0) = 0 AND COALESCE(order_discount_paise, 0) > 0"
+      );
+    } catch (e) {
+      /* ignore */
+    }
+    try {
       db.run("ALTER TABLE lot_line ADD COLUMN strip_mrp_paise INTEGER");
     } catch (e) {
       /* duplicate column */
@@ -336,6 +369,21 @@
       db.run("ALTER TABLE lot_line ADD COLUMN available_tabs INTEGER");
     } catch (e) {
       /* duplicate column */
+    }
+    try {
+      db.run("ALTER TABLE lot_line ADD COLUMN strips_per_pack INTEGER NOT NULL DEFAULT 1");
+    } catch (e) {
+      /* duplicate column */
+    }
+    try {
+      db.run(
+        [
+          "UPDATE lot_line SET strips_per_pack = ",
+          "MAX(1, COALESCE((SELECT p.strips_per_pack FROM product p WHERE p.id = lot_line.product_id), 1))",
+        ].join("")
+      );
+    } catch (e) {
+      /* ignore */
     }
     try {
       db.run(
@@ -398,7 +446,92 @@
     } catch (e) {
       /* duplicate column */
     }
+    try {
+      db.exec(
+        [
+          "CREATE TABLE IF NOT EXISTS doctor (",
+          "  id INTEGER PRIMARY KEY AUTOINCREMENT,",
+          "  entity_id INTEGER NOT NULL REFERENCES entity (id) ON DELETE CASCADE,",
+          "  name TEXT NOT NULL,",
+          "  phone TEXT,",
+          "  created_at TEXT NOT NULL,",
+          "  updated_at TEXT NOT NULL",
+          ");",
+          "CREATE INDEX IF NOT EXISTS idx_doctor_entity_name ON doctor (entity_id, name);",
+        ].join("\n")
+      );
+    } catch (e) {
+      /* ignore */
+    }
+    try {
+      db.run(
+        "ALTER TABLE prescription ADD COLUMN doctor_id INTEGER REFERENCES doctor (id) ON DELETE SET NULL"
+      );
+    } catch (e) {
+      /* duplicate column */
+    }
+    try {
+      backfillPrescriptionDoctorIds(db);
+    } catch (e) {
+      /* ignore */
+    }
+    try {
+      db.run("ALTER TABLE prescription ADD COLUMN import_key TEXT");
+    } catch (e) {
+      /* duplicate column */
+    }
+    try {
+      db.run("DROP INDEX IF EXISTS uq_prescription_entity_import_key");
+    } catch (e) {
+      /* ignore */
+    }
+    try {
+      db.run(
+        "CREATE UNIQUE INDEX IF NOT EXISTS uq_prescription_entity_import_key ON prescription (entity_id, import_key COLLATE NOCASE) WHERE import_key IS NOT NULL AND import_key != ''"
+      );
+    } catch (e) {
+      /* ignore */
+    }
     runStaffMigrations(db);
+  }
+
+  /** Migrates legacy prescription.doctor_name / doctor_phone into doctor rows + doctor_id. */
+  function backfillPrescriptionDoctorIds(db) {
+    var t = nowIso();
+    var rows = execAll(
+      db,
+      [
+        "SELECT id, entity_id, doctor_name, doctor_phone FROM prescription",
+        "WHERE doctor_id IS NULL AND doctor_name IS NOT NULL AND trim(doctor_name) != ''",
+      ].join(" ")
+    );
+    var i;
+    for (i = 0; i < rows.length; i++) {
+      var r = rows[i];
+      var name = String(r.doctor_name || "").trim();
+      if (!name) continue;
+      var phone =
+        r.doctor_phone != null && String(r.doctor_phone).trim() ? String(r.doctor_phone).trim() : null;
+      var ex = execAll(
+        db,
+        [
+          "SELECT id FROM doctor WHERE entity_id = ? AND lower(trim(name)) = lower(?) AND ",
+          "coalesce(phone,'') = coalesce(?,'')",
+        ].join(""),
+        [Number(r.entity_id), name, phone]
+      );
+      var did;
+      if (ex.length) {
+        did = Number(ex[0].id);
+      } else {
+        db.run(
+          "INSERT INTO doctor (entity_id, name, phone, created_at, updated_at) VALUES (?, ?, ?, ?, ?)",
+          [Number(r.entity_id), name, phone, t, t]
+        );
+        did = db.exec("SELECT last_insert_rowid() AS id")[0].values[0][0];
+      }
+      db.run("UPDATE prescription SET doctor_id = ? WHERE id = ?", [did, Number(r.id)]);
+    }
   }
 
   /** Normalize staff role for insert/update/import. */
@@ -692,6 +825,39 @@
     }
     stmt.free();
     return rows;
+  }
+
+  /**
+   * Header discount: percentage (1–50, exclusive) or flat paise. Computes effective {@link discount_paise}
+   * capped by line subtotal. Stores entered flat uncapped in {@link flat_paise} when not using percent.
+   */
+  function resolveShopOrderHeaderDiscount(header, lineSumPaise) {
+    var sum = Math.max(0, Number(lineSumPaise) || 0);
+    var pctRaw = header.order_header_discount_percent;
+    var pct =
+      pctRaw != null && pctRaw !== "" ? Number(pctRaw) : NaN;
+    if (!isNaN(pct) && pct > 0) {
+      var p = Math.min(50, Math.max(0, Math.round(pct)));
+      var disc = Math.min(sum, Math.round((sum * p) / 100));
+      return {
+        discount_paise: disc,
+        flat_paise: 0,
+        percent: p,
+      };
+    }
+    var flatRaw = header.order_header_discount_flat_paise;
+    var flat =
+      flatRaw != null && flatRaw !== "" ? Number(flatRaw) : NaN;
+    if (isNaN(flat)) {
+      flat = Math.max(0, Number(header.order_discount_paise) || 0);
+    } else {
+      flat = Math.max(0, flat);
+    }
+    return {
+      discount_paise: Math.min(flat, sum),
+      flat_paise: flat,
+      percent: null,
+    };
   }
 
   /**
@@ -1778,7 +1944,7 @@
     return execAll(
       this._db,
       [
-        "SELECT ll.id, ll.quantity, ll.available_count, ll.available_tabs, ll.selling_price_paise, ll.delivered_on, ll.line_notes,",
+        "SELECT ll.id, ll.quantity, ll.strips_per_pack, ll.available_count, ll.available_tabs, ll.selling_price_paise, ll.delivered_on, ll.line_notes,",
         "lo.id AS lot_id, lo.lot_number, lo.delivered_date, lo.lot_date, v.name AS vendor_name",
         "FROM lot_line ll",
         "INNER JOIN lot lo ON lo.id = ll.lot_id",
@@ -1795,9 +1961,9 @@
     var t = nowIso();
     this._db.run(
       [
-        "INSERT INTO product (entity_id, name, code, barcode, pack_label, strips_per_pack, units_per_strip,",
+        "INSERT INTO product (entity_id, name, code, barcode, pack_label, units_per_strip,",
         "description, chemical_composition, general_recommendation, where_to_use, product_type_id, is_active, created_at, updated_at)",
-        "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 1, ?, ?)",
+        "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 1, ?, ?)",
       ].join(" "),
       [
         eid,
@@ -1805,7 +1971,6 @@
         p.code || null,
         p.barcode || null,
         p.pack_label || null,
-        p.strips_per_pack != null ? Number(p.strips_per_pack) : 1,
         p.units_per_strip != null ? Number(p.units_per_strip) : null,
         p.description || null,
         p.chemical_composition || null,
@@ -1827,7 +1992,7 @@
     var t = nowIso();
     this._db.run(
       [
-        "UPDATE product SET name = ?, code = ?, barcode = ?, pack_label = ?, strips_per_pack = ?, units_per_strip = ?,",
+        "UPDATE product SET name = ?, code = ?, barcode = ?, pack_label = ?, units_per_strip = ?,",
         "description = ?, chemical_composition = ?, general_recommendation = ?, where_to_use = ?, product_type_id = ?, updated_at = ?",
         "WHERE id = ? AND entity_id = ?",
       ].join(" "),
@@ -1836,7 +2001,6 @@
         p.code || null,
         p.barcode || null,
         p.pack_label || null,
-        p.strips_per_pack != null ? Number(p.strips_per_pack) : 1,
         p.units_per_strip != null ? Number(p.units_per_strip) : null,
         p.description || null,
         p.chemical_composition || null,
@@ -1963,9 +2127,10 @@
   };
 
   /**
-   * Bulk insert products (e.g. CSV import). Single transaction + one persist.
+   * Bulk upsert products (CSV / Excel import). Match by product code (trimmed, case-insensitive);
+   * updates the first existing row if duplicates already exist. Rows without a code still insert as new.
    * @param {Array<object>} items — same shape as insertProduct
-   * @returns {Promise<number>} inserted count
+   * @returns {Promise<{ inserted: number, updated: number }>}
    */
   MargDb.prototype.importProductsBatch = function (items) {
     var eid = this.requireEntityId();
@@ -1975,34 +2140,89 @@
     var t = nowIso();
     var self = this;
     var inserted = 0;
+    var updated = 0;
+    var codeMap = {};
+    var existing = execAll(
+      this._db,
+      "SELECT id, code FROM product WHERE entity_id = ?",
+      [eid]
+    );
+    var ei;
+    for (ei = 0; ei < existing.length; ei++) {
+      var er = existing[ei];
+      var rawC = er.code != null ? String(er.code).trim() : "";
+      if (!rawC) continue;
+      var ck = rawC.toLowerCase();
+      if (codeMap[ck] == null) {
+        codeMap[ck] = Number(er.id);
+      }
+    }
     try {
       this._db.run("BEGIN TRANSACTION");
       items.forEach(function (p) {
         if (!p || !String(p.name || "").trim()) return;
-        self._db.run(
-          [
-            "INSERT INTO product (entity_id, name, code, barcode, pack_label, strips_per_pack, units_per_strip,",
-            "description, chemical_composition, general_recommendation, where_to_use, product_type_id, is_active, created_at, updated_at)",
-            "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 1, ?, ?)",
-          ].join(" "),
-          [
-            eid,
-            String(p.name).trim(),
-            p.code || null,
-            p.barcode || null,
-            p.pack_label || null,
-            p.strips_per_pack != null ? Number(p.strips_per_pack) : 1,
-            p.units_per_strip != null && p.units_per_strip !== "" ? Number(p.units_per_strip) : null,
-            p.description || null,
-            p.chemical_composition || null,
-            p.general_recommendation || null,
-            p.where_to_use || null,
-            p.product_type_id != null && p.product_type_id !== "" ? Number(p.product_type_id) : null,
-            t,
-            t,
-          ]
-        );
-        inserted++;
+        var nameTrim = String(p.name).trim();
+        var codeTrim = p.code != null && String(p.code).trim() ? String(p.code).trim() : "";
+        var ups = p.units_per_strip != null && p.units_per_strip !== "" ? Number(p.units_per_strip) : null;
+        var ptid =
+          p.product_type_id != null && p.product_type_id !== "" ? Number(p.product_type_id) : null;
+        var vals = [
+          nameTrim,
+          codeTrim || null,
+          p.barcode != null && String(p.barcode).trim() ? String(p.barcode).trim() : null,
+          p.pack_label != null && String(p.pack_label).trim() ? String(p.pack_label).trim() : null,
+          ups,
+          p.description || null,
+          p.chemical_composition || null,
+          p.general_recommendation || null,
+          p.where_to_use || null,
+          ptid,
+          t,
+        ];
+        var existingId = null;
+        if (codeTrim) {
+          existingId = codeMap[codeTrim.toLowerCase()];
+        }
+        if (existingId != null) {
+          vals.push(existingId, eid);
+          self._db.run(
+            [
+              "UPDATE product SET name = ?, code = ?, barcode = ?, pack_label = ?, units_per_strip = ?,",
+              "description = ?, chemical_composition = ?, general_recommendation = ?, where_to_use = ?, product_type_id = ?, updated_at = ?",
+              "WHERE id = ? AND entity_id = ?",
+            ].join(" "),
+            vals
+          );
+          updated++;
+        } else {
+          self._db.run(
+            [
+              "INSERT INTO product (entity_id, name, code, barcode, pack_label, units_per_strip,",
+              "description, chemical_composition, general_recommendation, where_to_use, product_type_id, is_active, created_at, updated_at)",
+              "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 1, ?, ?)",
+            ].join(" "),
+            [
+              eid,
+              nameTrim,
+              codeTrim || null,
+              p.barcode != null && String(p.barcode).trim() ? String(p.barcode).trim() : null,
+              p.pack_label != null && String(p.pack_label).trim() ? String(p.pack_label).trim() : null,
+              ups,
+              p.description || null,
+              p.chemical_composition || null,
+              p.general_recommendation || null,
+              p.where_to_use || null,
+              ptid,
+              t,
+              t,
+            ]
+          );
+          inserted++;
+          if (codeTrim) {
+            var newId = self._db.exec("SELECT last_insert_rowid() AS id")[0].values[0][0];
+            codeMap[codeTrim.toLowerCase()] = Number(newId);
+          }
+        }
       });
       this._db.run("COMMIT");
     } catch (err) {
@@ -2013,52 +2233,91 @@
       }
       return Promise.reject(err);
     }
-    if (inserted === 0) {
+    if (inserted === 0 && updated === 0) {
       return Promise.reject(new Error("No valid rows (each row needs a name)"));
     }
     return this.save().then(function () {
-      return inserted;
+      return { inserted: inserted, updated: updated };
     });
   };
 
   /**
-   * Bulk insert vendors (Excel import). Single transaction + one persist.
-   * @returns {Promise<number>} inserted count
+   * Bulk upsert vendors (CSV / Excel). Match by vendor name (trimmed, case-insensitive); first existing wins if duplicates.
+   * @returns {Promise<{ inserted: number, updated: number }>}
    */
   MargDb.prototype.importVendorsBatch = function (items) {
     var eid = this.requireEntityId();
     if (!items || !items.length) {
-      return Promise.resolve(0);
+      return Promise.resolve({ inserted: 0, updated: 0 });
     }
     var t = nowIso();
     var self = this;
     var inserted = 0;
+    var updated = 0;
+    var nameMap = {};
+    var existingV = execAll(this._db, "SELECT id, name FROM vendor WHERE entity_id = ?", [eid]);
+    var vi;
+    for (vi = 0; vi < existingV.length; vi++) {
+      var vn = String(existingV[vi].name || "").trim().toLowerCase();
+      if (!vn || nameMap[vn] != null) continue;
+      nameMap[vn] = Number(existingV[vi].id);
+    }
     try {
       this._db.run("BEGIN TRANSACTION");
       items.forEach(function (v) {
         if (!v || !String(v.name || "").trim()) return;
-        self._db.run(
-          [
-            "INSERT INTO vendor (entity_id, name, phone, email, address_line1, address_line2, city, state, pincode, gstin, notes, created_at, updated_at)",
-            "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
-          ].join(" "),
-          [
-            eid,
-            String(v.name).trim(),
-            v.phone || null,
-            v.email || null,
-            v.address_line1 || null,
-            v.address_line2 || null,
-            v.city || null,
-            v.state || null,
-            v.pincode || null,
-            v.gstin || null,
-            v.notes || null,
-            t,
-            t,
-          ]
-        );
-        inserted++;
+        var nm = String(v.name).trim();
+        var nk = nm.toLowerCase();
+        var vals = [
+          nm,
+          v.phone || null,
+          v.email || null,
+          v.address_line1 || null,
+          v.address_line2 || null,
+          v.city || null,
+          v.state || null,
+          v.pincode || null,
+          v.gstin || null,
+          v.notes || null,
+          t,
+        ];
+        var vid = nameMap[nk];
+        if (vid != null) {
+          vals.push(vid, eid);
+          self._db.run(
+            [
+              "UPDATE vendor SET name = ?, phone = ?, email = ?, address_line1 = ?, address_line2 = ?, city = ?, state = ?, pincode = ?, gstin = ?, notes = ?, updated_at = ?",
+              "WHERE id = ? AND entity_id = ?",
+            ].join(" "),
+            vals
+          );
+          updated++;
+        } else {
+          self._db.run(
+            [
+              "INSERT INTO vendor (entity_id, name, phone, email, address_line1, address_line2, city, state, pincode, gstin, notes, created_at, updated_at)",
+              "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+            ].join(" "),
+            [
+              eid,
+              nm,
+              v.phone || null,
+              v.email || null,
+              v.address_line1 || null,
+              v.address_line2 || null,
+              v.city || null,
+              v.state || null,
+              v.pincode || null,
+              v.gstin || null,
+              v.notes || null,
+              t,
+              t,
+            ]
+          );
+          inserted++;
+          var nid = self._db.exec("SELECT last_insert_rowid() AS id")[0].values[0][0];
+          nameMap[nk] = Number(nid);
+        }
       });
       this._db.run("COMMIT");
     } catch (err) {
@@ -2069,51 +2328,107 @@
       }
       return Promise.reject(err);
     }
-    if (inserted === 0) {
-      return Promise.resolve(0);
+    if (inserted === 0 && updated === 0) {
+      return Promise.resolve({ inserted: 0, updated: 0 });
     }
     return this.save().then(function () {
-      return inserted;
+      return { inserted: inserted, updated: updated };
     });
   };
 
+  function normalizeCustomerPhoneDigits(phone) {
+    return String(phone || "").replace(/\D/g, "");
+  }
+
   /**
-   * Bulk insert customers (Excel import). Single transaction + one persist.
-   * @returns {Promise<number>} inserted count
+   * Bulk upsert customers (CSV / Excel).
+   * Match: normalized phone (digits only, length ≥ 7) else name only (trimmed, case-insensitive).
+   * @returns {Promise<{ inserted: number, updated: number }>}
    */
   MargDb.prototype.importCustomersBatch = function (items) {
     var eid = this.requireEntityId();
     if (!items || !items.length) {
-      return Promise.resolve(0);
+      return Promise.resolve({ inserted: 0, updated: 0 });
     }
     var t = nowIso();
     var self = this;
     var inserted = 0;
+    var updated = 0;
+    var phoneMap = {};
+    var nameMap = {};
+    var existingC = execAll(
+      this._db,
+      "SELECT id, name, phone FROM customer WHERE entity_id = ?",
+      [eid]
+    );
+    var ci;
+    for (ci = 0; ci < existingC.length; ci++) {
+      var er = existingC[ci];
+      var pid = normalizeCustomerPhoneDigits(er.phone);
+      var nk = String(er.name || "").trim().toLowerCase();
+      if (pid.length >= 7) {
+        if (phoneMap[pid] == null) phoneMap[pid] = Number(er.id);
+      } else if (nk && nameMap[nk] == null) {
+        nameMap[nk] = Number(er.id);
+      }
+    }
     try {
       this._db.run("BEGIN TRANSACTION");
       items.forEach(function (c) {
         if (!c || !String(c.name || "").trim()) return;
-        self._db.run(
-          [
-            "INSERT INTO customer (entity_id, name, phone, address_line1, address_line2, city, state, pincode, email, notes, created_at, updated_at)",
-            "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
-          ].join(" "),
-          [
-            eid,
-            String(c.name).trim(),
-            c.phone || null,
-            c.address_line1 || null,
-            c.address_line2 || null,
-            c.city || null,
-            c.state || null,
-            c.pincode || null,
-            c.email || null,
-            c.notes || null,
-            t,
-            t,
-          ]
-        );
-        inserted++;
+        var nm = String(c.name).trim();
+        var nk = nm.toLowerCase();
+        var phDig = normalizeCustomerPhoneDigits(c.phone);
+        var vals = [
+          nm,
+          c.phone || null,
+          c.address_line1 || null,
+          c.address_line2 || null,
+          c.city || null,
+          c.state || null,
+          c.pincode || null,
+          c.email || null,
+          c.notes || null,
+          t,
+        ];
+        var cid = phDig.length >= 7 ? phoneMap[phDig] : nameMap[nk];
+        if (cid != null) {
+          vals.push(cid, eid);
+          self._db.run(
+            [
+              "UPDATE customer SET name = ?, phone = ?, address_line1 = ?, address_line2 = ?, city = ?, state = ?, pincode = ?, email = ?, notes = ?, updated_at = ?",
+              "WHERE id = ? AND entity_id = ?",
+            ].join(" "),
+            vals
+          );
+          updated++;
+        } else {
+          self._db.run(
+            [
+              "INSERT INTO customer (entity_id, name, phone, address_line1, address_line2, city, state, pincode, email, notes, created_at, updated_at)",
+              "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+            ].join(" "),
+            [
+              eid,
+              nm,
+              c.phone || null,
+              c.address_line1 || null,
+              c.address_line2 || null,
+              c.city || null,
+              c.state || null,
+              c.pincode || null,
+              c.email || null,
+              c.notes || null,
+              t,
+              t,
+            ]
+          );
+          inserted++;
+          var newId = self._db.exec("SELECT last_insert_rowid() AS id")[0].values[0][0];
+          var nid = Number(newId);
+          if (phDig.length >= 7) phoneMap[phDig] = nid;
+          else if (nk) nameMap[nk] = nid;
+        }
       });
       this._db.run("COMMIT");
     } catch (err) {
@@ -2124,11 +2439,11 @@
       }
       return Promise.reject(err);
     }
-    if (inserted === 0) {
-      return Promise.resolve(0);
+    if (inserted === 0 && updated === 0) {
+      return Promise.resolve({ inserted: 0, updated: 0 });
     }
     return this.save().then(function () {
-      return inserted;
+      return { inserted: inserted, updated: updated };
     });
   };
 
@@ -2323,13 +2638,39 @@
     return rows.length ? rows[0] : null;
   };
 
+  /** @returns {number|null} lot id for this entity, or null */
+  MargDb.prototype.getLotIdByLotNumber = function (lotNumber) {
+    var eid = this.requireEntityId();
+    var n = lotNumber != null && String(lotNumber).trim() ? String(lotNumber).trim() : "";
+    if (!n) return null;
+    var rows = execAll(this._db, "SELECT id FROM lot WHERE entity_id = ? AND lot_number = ?", [eid, n]);
+    return rows.length ? Number(rows[0].id) : null;
+  };
+
+  /** @returns {{ id: number, status: string }|null} */
+  MargDb.prototype.getShopOrderIdAndStatusByOrderNumber = function (orderNumber) {
+    var eid = this.requireEntityId();
+    var on = orderNumber != null && String(orderNumber).trim() ? String(orderNumber).trim() : "";
+    if (!on) return null;
+    var rows = execAll(
+      this._db,
+      "SELECT id, status FROM shop_order WHERE entity_id = ? AND order_number = ?",
+      [eid, on]
+    );
+    if (!rows.length) return null;
+    return {
+      id: Number(rows[0].id),
+      status: String(rows[0].status || "draft").trim(),
+    };
+  };
+
   MargDb.prototype.getLotLines = function (lotId) {
     if (!this.getLot(lotId)) return [];
     /* Explicit columns — avoids sql.js getAsObject() quirks with ll.* + join */
     return execAll(
       this._db,
       [
-        "SELECT ll.id, ll.lot_id, ll.product_id, ll.quantity, ll.available_count, ll.available_tabs, ll.delivered_on,",
+        "SELECT ll.id, ll.lot_id, ll.product_id, ll.quantity, ll.strips_per_pack, ll.available_count, ll.available_tabs, ll.delivered_on,",
         "ll.selling_price_paise, ll.strip_mrp_paise, ll.line_notes, ll.created_at, ll.updated_at,",
         "p.name AS product_name, p.code AS product_code, p.pack_label AS pack_label",
         "FROM lot_line ll INNER JOIN product p ON p.id = ll.product_id",
@@ -2399,6 +2740,13 @@
         if (isNaN(mrp) || mrp < 0) {
           throw new Error("Strip MRP must be zero or positive");
         }
+        var spp =
+          line.strips_per_pack != null && line.strips_per_pack !== ""
+            ? Math.round(Number(line.strips_per_pack))
+            : 1;
+        if (!(spp >= 1) || isNaN(spp)) {
+          throw new Error("Strips per pack must be at least 1 on each line");
+        }
         var upsRows = execAll(
           self._db,
           "SELECT units_per_strip FROM product WHERE id = ? AND entity_id = ?",
@@ -2414,13 +2762,14 @@
         var avTabs = Math.round(av) * tabsPerStrip;
         self._db.run(
           [
-            "INSERT INTO lot_line (lot_id, product_id, quantity, available_count, available_tabs, delivered_on, selling_price_paise, strip_mrp_paise, line_notes, created_at, updated_at)",
-            "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+            "INSERT INTO lot_line (lot_id, product_id, quantity, strips_per_pack, available_count, available_tabs, delivered_on, selling_price_paise, strip_mrp_paise, line_notes, created_at, updated_at)",
+            "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
           ].join(" "),
           [
             lotId,
             pid,
             qty,
+            spp,
             Math.round(av),
             avTabs,
             line.delivered_on || null,
@@ -2529,6 +2878,13 @@
         if (isNaN(mrp) || mrp < 0) {
           throw new Error("Strip MRP must be zero or positive");
         }
+        var sppUp =
+          line.strips_per_pack != null && line.strips_per_pack !== ""
+            ? Math.round(Number(line.strips_per_pack))
+            : 1;
+        if (!(sppUp >= 1) || isNaN(sppUp)) {
+          throw new Error("Strips per pack must be at least 1 on each line");
+        }
         var upsRowsUp = execAll(
           self._db,
           "SELECT units_per_strip FROM product WHERE id = ? AND entity_id = ?",
@@ -2544,13 +2900,14 @@
         var avTabsUp = Math.round(av) * tabsPerStripUp;
         self._db.run(
           [
-            "INSERT INTO lot_line (lot_id, product_id, quantity, available_count, available_tabs, delivered_on, selling_price_paise, strip_mrp_paise, line_notes, created_at, updated_at)",
-            "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+            "INSERT INTO lot_line (lot_id, product_id, quantity, strips_per_pack, available_count, available_tabs, delivered_on, selling_price_paise, strip_mrp_paise, line_notes, created_at, updated_at)",
+            "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
           ].join(" "),
           [
             Number(lotId),
             pid,
             qty,
+            sppUp,
             Math.round(av),
             avTabsUp,
             line.delivered_on || null,
@@ -2628,6 +2985,129 @@
     });
   };
 
+  /** Doctor master — prescriptions reference doctor.id plus denormalized name/phone on prescription row. */
+  MargDb.prototype.listDoctors = function (q) {
+    var eid = this.requireEntityId();
+    var sql = "SELECT * FROM doctor WHERE entity_id = ?";
+    var params = [eid];
+    if (q && String(q).trim()) {
+      var like = "%" + q.trim() + "%";
+      sql += " AND (name LIKE ? OR IFNULL(phone,'') LIKE ?)";
+      params.push(like, like);
+    }
+    sql += " ORDER BY name COLLATE NOCASE";
+    return execAll(this._db, sql, params);
+  };
+
+  MargDb.prototype.getDoctor = function (id) {
+    var eid = this.requireEntityId();
+    var rows = execAll(this._db, "SELECT * FROM doctor WHERE id = ? AND entity_id = ?", [Number(id), eid]);
+    return rows.length ? rows[0] : null;
+  };
+
+  MargDb.prototype.insertDoctor = function (d) {
+    var eid = this.requireEntityId();
+    var t = nowIso();
+    if (!d || !String(d.name || "").trim()) {
+      return Promise.reject(new Error("Doctor name is required"));
+    }
+    var phone =
+      d.phone != null && String(d.phone).trim() ? String(d.phone).trim() : null;
+    this._db.run(
+      [
+        "INSERT INTO doctor (entity_id, name, phone, created_at, updated_at)",
+        "VALUES (?, ?, ?, ?, ?)",
+      ].join(" "),
+      [eid, String(d.name).trim(), phone, t, t]
+    );
+    var newId = this._db.exec("SELECT last_insert_rowid() AS id")[0].values[0][0];
+    return this.save().then(function () {
+      return newId;
+    });
+  };
+
+  /**
+   * Resolves doctor for a prescription header: prefer doctor_id (UI), else find-or-create by
+   * doctor_name / doctor_phone (CSV/import).
+   * @returns {{ doctor_id: number|null, doctor_name: string|null, doctor_phone: string|null }}
+   */
+  MargDb.prototype._normalizePrescriptionDoctorFromHeader = function (header) {
+    var eid = this.requireEntityId();
+    var raw = header && header.doctor_id;
+    var did =
+      raw != null && raw !== ""
+        ? Number(raw)
+        : null;
+    if (did != null && isNaN(did)) did = null;
+    if (did != null) {
+      var rows = execAll(
+        this._db,
+        "SELECT id, name, phone FROM doctor WHERE id = ? AND entity_id = ?",
+        [did, eid]
+      );
+      if (!rows.length) {
+        throw new Error("Unknown doctor");
+      }
+      var d = rows[0];
+      var nm = d.name != null ? String(d.name).trim() : null;
+      var ph =
+        d.phone != null && String(d.phone).trim() ? String(d.phone).trim() : null;
+      return {
+        doctor_id: did,
+        doctor_name: nm || null,
+        doctor_phone: ph,
+      };
+    }
+    var dn =
+      header &&
+      header.doctor_name != null &&
+      String(header.doctor_name).trim()
+        ? String(header.doctor_name).trim()
+        : null;
+    if (!dn) {
+      return { doctor_id: null, doctor_name: null, doctor_phone: null };
+    }
+    var ph =
+      header &&
+      header.doctor_phone != null &&
+      String(header.doctor_phone).trim()
+        ? String(header.doctor_phone).trim()
+        : null;
+    var ex = execAll(
+      this._db,
+      [
+        "SELECT id, name, phone FROM doctor WHERE entity_id = ? AND lower(trim(name)) = lower(?) AND ",
+        "coalesce(phone,'') = coalesce(?,'')",
+      ].join(""),
+      [eid, dn, ph]
+    );
+    if (ex.length) {
+      var dr = ex[0];
+      return {
+        doctor_id: Number(dr.id),
+        doctor_name: dr.name != null ? String(dr.name).trim() : dn,
+        doctor_phone:
+          dr.phone != null && String(dr.phone).trim()
+            ? String(dr.phone).trim()
+            : ph,
+      };
+    }
+    var t = nowIso();
+    this._db.run(
+      [
+        "INSERT INTO doctor (entity_id, name, phone, created_at, updated_at)",
+        "VALUES (?, ?, ?, ?, ?)",
+      ].join(" "),
+      [eid, dn, ph, t, t]
+    );
+    var newId = this._db.exec("SELECT last_insert_rowid() AS id")[0].values[0][0];
+    return {
+      doctor_id: newId,
+      doctor_name: dn,
+      doctor_phone: ph,
+    };
+  };
+
   /** docs/order.md §5 — list orders for active entity. */
   MargDb.prototype.listOrders = function (opts) {
     var eid = this.requireEntityId();
@@ -2636,7 +3116,7 @@
       ? ", (SELECT COUNT(*) FROM order_line ol WHERE ol.order_id = o.id) AS line_count"
       : "";
     var sql =
-      "SELECT o.id, o.order_number, o.order_date, o.order_total_price_paise, o.order_discount_paise, o.status, o.notes, o.created_at," +
+      "SELECT o.id, o.order_number, o.order_date, o.order_total_price_paise, o.order_discount_paise, o.order_header_discount_flat_paise, o.order_header_discount_percent, o.status, o.notes, o.created_at," +
       " c.id AS customer_id, c.name AS customer_name, c.phone AS customer_phone" +
       lineSelect +
       " FROM shop_order o INNER JOIN customer c ON c.id = o.customer_id WHERE o.entity_id = ?";
@@ -3011,7 +3491,10 @@
       }
       lineSum += Number(ln.total_price_paise) || 0;
     }
-    var discount = Math.max(0, Number(header.order_discount_paise) || 0);
+    var hdrDisc = resolveShopOrderHeaderDiscount(header, lineSum);
+    var discount = hdrDisc.discount_paise;
+    var flatStored = hdrDisc.flat_paise;
+    var percentStored = hdrDisc.percent;
     var orderTotal = Math.max(0, lineSum - discount);
     /** Explicit number (e.g. Excel import); otherwise assigned after insert as ORD- + zero-padded id. */
     var orderNum =
@@ -3042,8 +3525,8 @@
       this._db.run("BEGIN TRANSACTION");
       this._db.run(
         [
-          "INSERT INTO shop_order (entity_id, customer_id, order_number, order_date, order_total_price_paise, order_discount_paise, status, notes, prescription_id, created_at, updated_at)",
-          "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+          "INSERT INTO shop_order (entity_id, customer_id, order_number, order_date, order_total_price_paise, order_discount_paise, order_header_discount_flat_paise, order_header_discount_percent, status, notes, prescription_id, created_at, updated_at)",
+          "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
         ].join(" "),
         [
           eid,
@@ -3052,6 +3535,8 @@
           orderDate,
           orderTotal,
           discount,
+          flatStored,
+          percentStored,
           status,
           header.notes || null,
           rxId,
@@ -3148,7 +3633,10 @@
       }
       lineSum += Number(ln.total_price_paise) || 0;
     }
-    var discount = Math.max(0, Number(header.order_discount_paise) || 0);
+    var hdrDiscUp = resolveShopOrderHeaderDiscount(header, lineSum);
+    var discount = hdrDiscUp.discount_paise;
+    var flatStoredUp = hdrDiscUp.flat_paise;
+    var percentStoredUp = hdrDiscUp.percent;
     var orderTotal = Math.max(0, lineSum - discount);
     var orderNum =
       header.order_number && String(header.order_number).trim()
@@ -3182,13 +3670,15 @@
       this._db.run("BEGIN TRANSACTION");
       this._db.run("DELETE FROM order_line WHERE order_id = ?", [orderId]);
       var updateSql =
-        "UPDATE shop_order SET customer_id = ?, order_number = ?, order_date = ?, order_total_price_paise = ?, order_discount_paise = ?, notes = ?, updated_at = ?";
+        "UPDATE shop_order SET customer_id = ?, order_number = ?, order_date = ?, order_total_price_paise = ?, order_discount_paise = ?, order_header_discount_flat_paise = ?, order_header_discount_percent = ?, notes = ?, updated_at = ?";
       var updateParams = [
         header.customer_id,
         orderNum,
         orderDate,
         orderTotal,
         discount,
+        flatStoredUp,
+        percentStoredUp,
         header.notes || null,
         t,
       ];
@@ -3459,8 +3949,67 @@
     return { header: header, lines: lines };
   };
 
+  /** @returns {number|null} */
+  MargDb.prototype.getPrescriptionIdByImportKey = function (importKey) {
+    var k = importKey != null && String(importKey).trim() ? String(importKey).trim() : "";
+    if (!k) return null;
+    var eid = this.requireEntityId();
+    var rows = execAll(
+      this._db,
+      "SELECT id FROM prescription WHERE entity_id = ? AND import_key = ? COLLATE NOCASE",
+      [eid, k]
+    );
+    return rows.length ? Number(rows[0].id) : null;
+  };
+
   /**
-   * @param {{ customer_id: number, doctor_name?: string, doctor_phone?: string }} header
+   * CSV/Excel import: insert or replace lines when import_key (rx_key) matches.
+   * @param {{ customer_id: number, doctor_id?: *, doctor_name?: *, doctor_phone?: *, import_key?: string }} header
+   * @returns {Promise<{ id: number, updated: boolean }>}
+   */
+  MargDb.prototype.upsertPrescriptionFromImport = function (header, lines) {
+    var key =
+      header && header.import_key != null && String(header.import_key).trim()
+        ? String(header.import_key).trim()
+        : "";
+    var self = this;
+    if (key) {
+      var rxDbMatch = /^RX-DB-(\d+)$/i.exec(key);
+      if (rxDbMatch) {
+        var legacyId = Number(rxDbMatch[1]);
+        var legacyPack = this.getPrescription(legacyId);
+        if (legacyPack && legacyPack.header) {
+          var ik0 =
+            legacyPack.header.import_key != null && String(legacyPack.header.import_key).trim()
+              ? String(legacyPack.header.import_key).trim()
+              : "";
+          if (!ik0 || ik0.toLowerCase() === key.toLowerCase()) {
+            var hl = Object.assign({}, header);
+            hl.import_key = key;
+            return this.updatePrescription(legacyId, hl, lines).then(function () {
+              return { id: legacyId, updated: true };
+            });
+          }
+        }
+      }
+      var rid = this.getPrescriptionIdByImportKey(key);
+      if (rid != null) {
+        var hu = Object.assign({}, header);
+        hu.import_key = key;
+        return this.updatePrescription(rid, hu, lines).then(function () {
+          return { id: rid, updated: true };
+        });
+      }
+    }
+    var hi = Object.assign({}, header);
+    if (key) hi.import_key = key;
+    return this.insertPrescription(hi, lines).then(function (newId) {
+      return { id: newId, updated: false };
+    });
+  };
+
+  /**
+   * @param {{ customer_id: number, doctor_id?: number|string|null, import_key?: string }} header
    * @param {Array<{ prescription_status?: string, prescription_type?: string, prescription_notes?: string, secret_notes?: string }>} lines
    * @returns {Promise<number>} new prescription id
    */
@@ -3474,6 +4023,16 @@
     if (!this.getCustomer(cid)) {
       return Promise.reject(new Error("Unknown customer"));
     }
+    var doc;
+    try {
+      doc = this._normalizePrescriptionDoctorFromHeader(header);
+    } catch (err) {
+      return Promise.reject(err);
+    }
+    var impKey =
+      header.import_key != null && String(header.import_key).trim()
+        ? String(header.import_key).trim()
+        : null;
     lines = lines || [];
     var self = this;
     var rxId;
@@ -3481,18 +4040,16 @@
       this._db.run("BEGIN TRANSACTION");
       this._db.run(
         [
-          "INSERT INTO prescription (entity_id, customer_id, doctor_name, doctor_phone, created_at, updated_at)",
-          "VALUES (?, ?, ?, ?, ?, ?)",
+          "INSERT INTO prescription (entity_id, customer_id, doctor_id, doctor_name, doctor_phone, import_key, created_at, updated_at)",
+          "VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
         ].join(" "),
         [
           eid,
           cid,
-          header.doctor_name != null && String(header.doctor_name).trim()
-            ? String(header.doctor_name).trim()
-            : null,
-          header.doctor_phone != null && String(header.doctor_phone).trim()
-            ? String(header.doctor_phone).trim()
-            : null,
+          doc.doctor_id,
+          doc.doctor_name,
+          doc.doctor_phone,
+          impKey,
           t,
           t,
         ]
@@ -3538,7 +4095,7 @@
 
   /**
    * @param {number} id
-   * @param {{ customer_id: number, doctor_name?: string, doctor_phone?: string }} header
+   * @param {{ customer_id: number, doctor_id?: number|string|null, import_key?: string }} header
    * @param {Array<{ id?: number, prescription_status?: string, prescription_type?: string, prescription_notes?: string, secret_notes?: string }>} lines
    */
   MargDb.prototype.updatePrescription = function (id, header, lines) {
@@ -3556,28 +4113,30 @@
     if (!this.getCustomer(cid)) {
       return Promise.reject(new Error("Unknown customer"));
     }
+    var doc;
+    try {
+      doc = this._normalizePrescriptionDoctorFromHeader(header);
+    } catch (err) {
+      return Promise.reject(err);
+    }
     lines = lines || [];
     var self = this;
     try {
       this._db.run("BEGIN TRANSACTION");
-      this._db.run(
-        [
-          "UPDATE prescription SET customer_id = ?, doctor_name = ?, doctor_phone = ?, updated_at = ?",
-          "WHERE id = ? AND entity_id = ?",
-        ].join(" "),
-        [
-          cid,
-          header.doctor_name != null && String(header.doctor_name).trim()
-            ? String(header.doctor_name).trim()
-            : null,
-          header.doctor_phone != null && String(header.doctor_phone).trim()
-            ? String(header.doctor_phone).trim()
-            : null,
-          t,
-          rid,
-          eid,
-        ]
-      );
+      var updSql =
+        "UPDATE prescription SET customer_id = ?, doctor_id = ?, doctor_name = ?, doctor_phone = ?, updated_at = ?";
+      var updParams = [cid, doc.doctor_id, doc.doctor_name, doc.doctor_phone, t];
+      if (Object.prototype.hasOwnProperty.call(header, "import_key")) {
+        var ik =
+          header.import_key != null && String(header.import_key).trim()
+            ? String(header.import_key).trim()
+            : null;
+        updSql += ", import_key = ?";
+        updParams.push(ik);
+      }
+      updSql += " WHERE id = ? AND entity_id = ?";
+      updParams.push(rid, eid);
+      this._db.run(updSql, updParams);
       this._db.run("DELETE FROM prescription_line WHERE prescription_id = ?", [rid]);
       lines.forEach(function (ln) {
         var st = ln.prescription_status && String(ln.prescription_status).trim()

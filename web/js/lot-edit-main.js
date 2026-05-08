@@ -269,10 +269,18 @@
 
     var $r1 = $("<div></div>").addClass("row lot-line-row-main").append(
       $("<div></div>")
-        .addClass("col s12 m5 lot-field-group lot-field-group--product")
+        .addClass("col s12 m4 lot-field-group lot-field-group--product")
         .append(
           $("<span></span>").addClass("lot-stacked-label").text("Product"),
           $wrap
+        ),
+      $("<div></div>")
+        .addClass("col s6 m2 lot-field-group")
+        .append(
+          $("<span></span>").addClass("lot-stacked-label").text("Strips / pack"),
+          $("<input>")
+            .attr({ type: "number", min: 1, step: 1, value: 1 })
+            .addClass("browser-default lot-strips-per-pack lot-stacked-input")
         ),
       $("<div></div>")
         .addClass("col s6 m2 lot-field-group")
@@ -291,7 +299,7 @@
             .addClass("browser-default lot-available lot-stacked-input")
         ),
       $("<div></div>")
-        .addClass("col s12 m3 lot-field-group")
+        .addClass("col s12 m2 lot-field-group")
         .append(
           $("<span></span>").addClass("lot-stacked-label").text("Delivered on"),
           $("<input>").attr({ type: "date" }).addClass("browser-default lot-delivered lot-stacked-input lot-stacked-input--date")
@@ -356,6 +364,7 @@
     var $row = $($rows[$rows.length - 1]);
     $row.find(".ol-product-id").val(String(ln.product_id));
     $row.find(".ol-product-search").val(labelFromLine(ln));
+    $row.find(".lot-strips-per-pack").val(ln.strips_per_pack != null ? ln.strips_per_pack : 1);
     $row.find(".lot-qty").val(ln.quantity != null ? ln.quantity : 1);
     var av =
       ln.available_count != null && ln.available_count !== ""
@@ -592,9 +601,15 @@
               });
               return;
             }
+            var sppEd = parseInt($r.find(".lot-strips-per-pack").val(), 10);
+            if (!(sppEd >= 1) || isNaN(sppEd)) {
+              M.toast({ html: "Strips per pack must be at least 1 on every line." });
+              return;
+            }
             lines.push({
               product_id: Number(pid),
               quantity: qty,
+              strips_per_pack: sppEd,
               available_count: avail,
               delivered_on: $r.find(".lot-delivered").val() || null,
               selling_price_paise: sp,

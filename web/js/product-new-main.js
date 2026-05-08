@@ -62,7 +62,6 @@
       code: $("#pn-code").val(),
       barcode: $("#pn-barcode").val(),
       pack_label: $("#pn-pack-label").val(),
-      strips_per_pack: $("#pn-strips").val(),
       units_per_strip: $("#pn-units").val(),
       description: $("#pn-desc").val(),
       chemical_composition: $("#pn-composition").val(),
@@ -77,7 +76,6 @@
     $("#pn-code").val(p.code || "");
     $("#pn-barcode").val(p.barcode || "");
     $("#pn-pack-label").val(p.pack_label || "");
-    $("#pn-strips").val(p.strips_per_pack != null ? p.strips_per_pack : 1);
     $("#pn-units").val(p.units_per_strip != null ? p.units_per_strip : "");
     $("#pn-desc").val(p.description || "");
     $("#pn-composition").val(p.chemical_composition || "");

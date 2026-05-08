@@ -77,7 +77,10 @@
    * @returns {Promise<{ imported: number, errors: string[] }>}
    */
   function importPrescriptionsCsv(db, csvText) {
-    if (typeof db.insertPrescription !== "function") {
+    if (
+      typeof db.upsertPrescriptionFromImport !== "function" &&
+      typeof db.insertPrescription !== "function"
+    ) {
       return Promise.reject(new Error("Database does not support prescriptions."));
     }
     var rows = parseCsv(csvText);
@@ -116,6 +119,15 @@
     }
     var errors = [];
     var imported = 0;
+    var updated = 0;
+    var doUpsert =
+      typeof db.upsertPrescriptionFromImport === "function"
+        ? db.upsertPrescriptionFromImport.bind(db)
+        : function (hdr, pl) {
+            return db.insertPrescription(hdr, pl).then(function (id) {
+              return { id: id, updated: false };
+            });
+          };
     return keys.reduce(function (p, key) {
       return p.then(function () {
         var h = headersByKey[key];
@@ -137,24 +149,25 @@
             secret_notes: ln.secret_notes ? String(ln.secret_notes).trim() : null,
           };
         });
-        return db
-          .insertPrescription(
-            {
-              customer_id: cid,
-              doctor_name: h.doctor_name ? String(h.doctor_name).trim() : null,
-              doctor_phone: h.doctor_phone ? String(h.doctor_phone).trim() : null,
-            },
-            payload
-          )
-          .then(function () {
-            imported++;
+        return doUpsert(
+          {
+            customer_id: cid,
+            import_key: key,
+            doctor_name: h.doctor_name ? String(h.doctor_name).trim() : null,
+            doctor_phone: h.doctor_phone ? String(h.doctor_phone).trim() : null,
+          },
+          payload
+        )
+          .then(function (res) {
+            if (res && res.updated) updated++;
+            else imported++;
           })
           .catch(function (err) {
             errors.push(key + ": " + (err && err.message ? err.message : String(err)));
           });
       });
     }, Promise.resolve()).then(function () {
-      return { imported: imported, errors: errors };
+      return { imported: imported, updated: updated, errors: errors };
     });
   }
 

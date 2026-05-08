@@ -33,6 +33,9 @@
                 <button type="button" id="btn-csv-import-products" class="btn waves-effect inv-btn-outline">
                   <i class="material-icons left">upload_file</i>Import CSV
                 </button>
+                <button type="button" id="btn-csv-export-products" class="btn waves-effect inv-btn-outline">
+                  <i class="material-icons left">download</i>Export CSV
+                </button>
                 <input type="file" id="csv-products-file" accept=".csv,text/csv" class="hide" />
                 <a href="product-new.html" id="btn-product-add" class="btn waves-effect inv-btn-primary">
                   <i class="material-icons left">add</i>Add product
@@ -79,7 +82,7 @@
                     <th>In stock (tabs)</th>
                     <th>Pack label</th>
                     <th>Tabs / strip</th>
-                    <th>Strip / pack</th>
+                    <th title="Set strips per pack on each purchase lot">Pack (tabs)</th>
                     <th>Status</th>
                     <th class="inv-th-actions">Actions</th>
                   </tr>
@@ -115,6 +118,9 @@
                 </button>
                 <button type="button" id="btn-csv-import-vendors" class="btn waves-effect inv-btn-outline">
                   <i class="material-icons left">upload_file</i>Import CSV
+                </button>
+                <button type="button" id="btn-csv-export-vendors" class="btn waves-effect inv-btn-outline">
+                  <i class="material-icons left">download</i>Export CSV
                 </button>
                 <input type="file" id="csv-vendors-file" accept=".csv,text/csv" class="hide" />
                 <button type="button" id="btn-vendor-add" class="btn waves-effect inv-btn-primary">
@@ -152,6 +158,9 @@
                 </button>
                 <button type="button" id="btn-csv-import-lots" class="btn waves-effect inv-btn-outline">
                   <i class="material-icons left">upload_file</i>Import CSV
+                </button>
+                <button type="button" id="btn-csv-export-lots" class="btn waves-effect inv-btn-outline">
+                  <i class="material-icons left">download</i>Export CSV
                 </button>
                 <input type="file" id="csv-lots-file" accept=".csv,text/csv" class="hide" />
                 <a href="lot-new.html" id="btn-lot-add" class="btn waves-effect inv-btn-primary">

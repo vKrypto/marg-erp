@@ -130,7 +130,7 @@
 
     var $tb = $("#ld-lines-body").empty();
     if (!lines.length) {
-      $tb.append('<tr><td colspan="9" class="center grey-text">No lines.</td></tr>');
+      $tb.append('<tr><td colspan="10" class="center grey-text">No lines.</td></tr>');
       return;
     }
     lines.forEach(function (ln) {
@@ -150,6 +150,9 @@
           "</td>" +
           "<td class=\"inv-mono\">" +
           esc(ln.product_code || "—") +
+          "</td>" +
+          '<td class="right-align">' +
+          esc(String(ln.strips_per_pack != null ? ln.strips_per_pack : "—")) +
           "</td>" +
           '<td class="right-align">' +
           esc(String(ln.quantity)) +

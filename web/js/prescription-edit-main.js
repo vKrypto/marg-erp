@@ -5,6 +5,7 @@
 (function () {
   var db;
   var customersCache = [];
+  var doctorsCache = [];
 
   var STATUS_OPTS = ["draft", "active", "completed", "cancelled"];
 
@@ -76,6 +77,134 @@
       $("#rx-customer-search").val("");
     }
     closeRxCustomerDd();
+  }
+
+  function doctorLabelFromRow(d) {
+    if (!d) return "";
+    var lab = d.name || "";
+    if (d.phone) lab += " · " + d.phone;
+    return lab;
+  }
+
+  function doctorMatchesSearch(d, qq) {
+    if (!qq) return true;
+    var q = qq.toLowerCase();
+    if (doctorLabelFromRow(d).toLowerCase().indexOf(q) >= 0) return true;
+    if ((d.name || "").toLowerCase().indexOf(q) >= 0) return true;
+    if ((d.phone || "").replace(/\s/g, "").toLowerCase().indexOf(q.replace(/\s/g, "")) >= 0)
+      return true;
+    return false;
+  }
+
+  function fillRxDoctorDropdown($ul, q) {
+    $ul.empty();
+    var qq = (q || "").toLowerCase().trim();
+    var n = 0;
+    for (var i = 0; i < doctorsCache.length; i++) {
+      var d = doctorsCache[i];
+      if (!doctorMatchesSearch(d, qq)) continue;
+      $ul.append(
+        $("<li></li>")
+          .addClass("oc-customer-li")
+          .attr("data-id", d.id)
+          .text(doctorLabelFromRow(d))
+      );
+      if (++n >= 80) break;
+    }
+    if (!n) {
+      $ul.append(
+        $("<li></li>").addClass("oc-customer-li oc-customer-li--empty").text("No matches")
+      );
+      $ul.append(
+        $("<li></li>")
+          .addClass("oc-customer-li oc-customer-li--add teal-text text-darken-1")
+          .text("Add new doctor…")
+      );
+    }
+  }
+
+  function closeRxDoctorDd() {
+    $("#rx-doctor-dd").addClass("hide").attr("aria-hidden", "true");
+  }
+
+  function refreshDoctorCache() {
+    try {
+      doctorsCache = db.listDoctors("");
+    } catch (err) {
+      doctorsCache = [];
+      if (typeof console !== "undefined" && console.warn) {
+        console.warn("listDoctors failed", err);
+      }
+    }
+  }
+
+  /**
+   * @param {number|string|null} selectedId
+   */
+  function refreshRxDoctorSelect(selectedId) {
+    refreshDoctorCache();
+    var sid =
+      selectedId != null && selectedId !== "" ? Number(selectedId) : null;
+    $("#rx-doctor-id").val(sid ? String(sid) : "");
+    if (sid) {
+      var d = db.getDoctor(Number(sid));
+      $("#rx-doctor-search").val(d ? doctorLabelFromRow(d) : "");
+    } else {
+      $("#rx-doctor-search").val("");
+    }
+    closeRxDoctorDd();
+  }
+
+  /**
+   * Prescriptions saved before doctor_id existed may only have denormalized name/phone.
+   * @param {{ doctor_id?: *, doctor_name?: *, doctor_phone?: * }} h
+   */
+  function applyDoctorFieldsFromHeader(h) {
+    if (!h) {
+      refreshRxDoctorSelect(null);
+      return;
+    }
+    if (h.doctor_id != null && h.doctor_id !== "") {
+      refreshRxDoctorSelect(Number(h.doctor_id));
+      return;
+    }
+    var dn = (h.doctor_name || "").trim();
+    if (!dn) {
+      refreshRxDoctorSelect(null);
+      return;
+    }
+    refreshDoctorCache();
+    var ph = (h.doctor_phone || "").trim().replace(/\s/g, "");
+    var found = null;
+    for (var i = 0; i < doctorsCache.length; i++) {
+      var d = doctorsCache[i];
+      if (String(d.name || "").trim().toLowerCase() !== dn.toLowerCase()) continue;
+      var dph = String(d.phone || "").replace(/\s/g, "");
+      if (!ph || dph === ph) {
+        found = d;
+        break;
+      }
+    }
+    if (found) {
+      refreshRxDoctorSelect(found.id);
+    } else {
+      $("#rx-doctor-id").val("");
+      $("#rx-doctor-search").val(
+        dn +
+          (h.doctor_phone && String(h.doctor_phone).trim()
+            ? " · " + String(h.doctor_phone).trim()
+            : "")
+      );
+    }
+  }
+
+  function openRxQuickDoctorModal(prefillName) {
+    $("#rxfd-name").val((prefillName || "").trim());
+    $("#rxfd-phone").val("");
+    if (typeof M !== "undefined") {
+      M.updateTextFields();
+    }
+    $("#modal-rx-doctor").modal("open");
   }
 
   function openRxQuickCustomerModal(prefillName) {
@@ -160,6 +289,7 @@
   function loadForm(id) {
     $("#rx-lines-container").empty();
     refreshCustomerCache();
+    refreshDoctorCache();
 
     if (id) {
       $("#rx-edit-title").text("Edit prescription");
@@ -175,8 +305,7 @@
       $("#rx-id").val(String(id));
       var h = pack.header;
       refreshRxCustomerSelect(h.customer_id);
-      $("#rx-doctor-name").val(h.doctor_name || "");
-      $("#rx-doctor-phone").val(h.doctor_phone || "");
+      applyDoctorFieldsFromHeader(h);
       if (pack.lines.length) {
         pack.lines.forEach(function (ln) {
           addLineRow(ln);
@@ -191,8 +320,7 @@
       var qs = new URLSearchParams(window.location.search);
       var preCust = qs.get("customerId");
       refreshRxCustomerSelect(preCust || null);
-      $("#rx-doctor-name").val("");
-      $("#rx-doctor-phone").val("");
+      refreshRxDoctorSelect(null);
       addLineRow();
     }
     M.updateTextFields();
@@ -216,10 +344,6 @@
 
         $(".modal").modal();
 
-        var qs = new URLSearchParams(window.location.search);
-        var idParam = qs.get("id");
-        loadForm(idParam ? Number(idParam) : null);
-
         $("#btn-rx-add-line").on("click", function () {
           addLineRow();
         });
@@ -239,6 +363,9 @@
           if (!$(e.target).closest("#rx-customer-wrap").length) {
             closeRxCustomerDd();
           }
+          if (!$(e.target).closest("#rx-doctor-wrap").length) {
+            closeRxDoctorDd();
+          }
         });
 
         $("#rx-customer-search").on("focus", function () {
@@ -254,7 +381,7 @@
           $dd.removeClass("hide").attr("aria-hidden", "false");
         });
 
-        $("#form-rx-edit").on("mousedown", ".oc-customer-li[data-id]", function (e) {
+        $("#rx-customer-dd").on("mousedown", ".oc-customer-li[data-id]", function (e) {
           e.preventDefault();
           var id = $(this).attr("data-id");
           var lab = $(this).text();
@@ -263,7 +390,7 @@
           closeRxCustomerDd();
         });
 
-        $("#form-rx-edit").on("mousedown", ".oc-customer-li--add", function (e) {
+        $("#rx-customer-dd").on("mousedown", ".oc-customer-li--add", function (e) {
           e.preventDefault();
           openRxQuickCustomerModal($("#rx-customer-search").val());
           closeRxCustomerDd();
@@ -271,6 +398,58 @@
 
         $("#btn-rx-quick-customer").on("click", function () {
           openRxQuickCustomerModal($("#rx-customer-search").val());
+        });
+
+        $("#rx-doctor-search").on("focus", function () {
+          var $dd = $("#rx-doctor-dd");
+          fillRxDoctorDropdown($dd, $(this).val());
+          $dd.removeClass("hide").attr("aria-hidden", "false");
+        });
+
+        $("#rx-doctor-search").on("input", function () {
+          $("#rx-doctor-id").val("");
+          var $dd = $("#rx-doctor-dd");
+          fillRxDoctorDropdown($dd, $(this).val());
+          $dd.removeClass("hide").attr("aria-hidden", "false");
+        });
+
+        $("#rx-doctor-dd").on("mousedown", ".oc-customer-li[data-id]", function (e) {
+          e.preventDefault();
+          var id = $(this).attr("data-id");
+          var lab = $(this).text();
+          $("#rx-doctor-id").val(id || "");
+          $("#rx-doctor-search").val(lab);
+          closeRxDoctorDd();
+        });
+
+        $("#rx-doctor-dd").on("mousedown", ".oc-customer-li--add", function (e) {
+          e.preventDefault();
+          openRxQuickDoctorModal($("#rx-doctor-search").val());
+          closeRxDoctorDd();
+        });
+
+        $("#btn-rx-quick-doctor").on("click", function () {
+          openRxQuickDoctorModal($("#rx-doctor-search").val());
+        });
+
+        $("#form-rx-doctor").on("submit", function (e) {
+          e.preventDefault();
+          var name = ($("#rxfd-name").val() || "").trim();
+          var phone = ($("#rxfd-phone").val() || "").trim();
+          if (!name) {
+            M.toast({ html: "Enter the doctor’s name." });
+            return;
+          }
+          db
+            .insertDoctor({ name: name, phone: phone || null })
+            .then(function (newId) {
+              $("#modal-rx-doctor").modal("close");
+              refreshRxDoctorSelect(newId);
+              M.toast({ html: "Doctor added and selected." });
+            })
+            .catch(function (err) {
+              M.toast({ html: err.message || String(err) });
+            });
         });
 
         $("#form-rx-customer").on("submit", function (e) {
@@ -304,10 +483,10 @@
             M.toast({ html: "Choose or add a patient (customer)." });
             return;
           }
+          var did = $("#rx-doctor-id").val();
           var header = {
             customer_id: Number(cid),
-            doctor_name: $("#rx-doctor-name").val(),
-            doctor_phone: $("#rx-doctor-phone").val(),
+            doctor_id: did ? Number(did) : null,
           };
           var lines = collectLines();
           var rid = $("#rx-id").val();
@@ -330,6 +509,16 @@
               .catch(fail);
           }
         });
+
+        var qsInit = new URLSearchParams(window.location.search);
+        var idParamInit = qsInit.get("id");
+        try {
+          loadForm(idParamInit ? Number(idParamInit) : null);
+        } catch (err) {
+          if (typeof M !== "undefined" && M.toast) {
+            M.toast({ html: err && err.message ? err.message : String(err) });
+          }
+        }
       })
       .catch(function () {
         window.location.href = "index.html";

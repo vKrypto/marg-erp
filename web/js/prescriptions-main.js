@@ -138,6 +138,16 @@
           $("#rx-csv-file").trigger("click");
         });
 
+        $("#btn-rx-csv-export").on("click", function () {
+          var C = window.MargInventoryCsv;
+          if (!C || !C.exportPrescriptionsCsv) {
+            M.toast({ html: "Export not available." });
+            return;
+          }
+          C.exportPrescriptionsCsv(db);
+          M.toast({ html: "CSV downloaded." });
+        });
+
         $("#rx-csv-file").on("change", function (e) {
           var file = e.target.files && e.target.files[0];
           e.target.value = "";
@@ -152,7 +162,12 @@
             MargPrescriptionCsv.importPrescriptionsCsv(db, text)
               .then(function (res) {
                 var msg =
-                  "Imported " + res.imported + " prescription(s)." + (res.errors.length ? " Some rows skipped." : "");
+                  "Prescriptions: " +
+                  (res.imported || 0) +
+                  " added" +
+                  (res.updated ? ", " + res.updated + " updated (same rx_key)" : "") +
+                  "." +
+                  (res.errors.length ? " Some rows skipped." : "");
                 M.toast({ html: msg });
                 if (res.errors.length) {
                   console.warn(res.errors);

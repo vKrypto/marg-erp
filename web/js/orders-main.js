@@ -30,6 +30,44 @@
     return "₹" + paiseToRupees(paise).toFixed(2);
   }
 
+  function headerDiscountFlatHasValue() {
+    return rupeesToPaise($("#order-discount-flat-inr").val()) > 0;
+  }
+
+  function headerDiscountPctHasValue() {
+    var v = $("#order-discount-pct").val();
+    if (v === "" || v == null) return false;
+    var n = Number(v);
+    return !isNaN(n) && n > 0;
+  }
+
+  function collectHeaderDiscountForSave() {
+    var pctRaw = $("#order-discount-pct").val();
+    var pct = pctRaw !== "" && pctRaw != null ? Number(pctRaw) : NaN;
+    if (!isNaN(pct) && pct > 0) {
+      return {
+        order_header_discount_flat_paise: 0,
+        order_header_discount_percent: Math.min(50, Math.max(0, Math.round(pct))),
+      };
+    }
+    return {
+      order_header_discount_flat_paise: rupeesToPaise($("#order-discount-flat-inr").val()),
+      order_header_discount_percent: null,
+    };
+  }
+
+  function computeHeaderDiscountPaiseFromInputs(lineSumPaise) {
+    var sum = Math.max(0, Number(lineSumPaise) || 0);
+    var pctRaw = $("#order-discount-pct").val();
+    var pct = pctRaw !== "" && pctRaw != null ? Number(pctRaw) : NaN;
+    if (!isNaN(pct) && pct > 0) {
+      var p = Math.min(50, Math.max(0, Math.round(pct)));
+      return Math.min(sum, Math.round((sum * p) / 100));
+    }
+    var flat = rupeesToPaise($("#order-discount-flat-inr").val());
+    return Math.min(Math.max(0, flat), sum);
+  }
+
   /**
    * Pop-up print: do NOT pass noopener/noreferrer in windowFeatures — MDN: that makes window.open return null.
    */
@@ -171,6 +209,13 @@
     $("#order-customer-dd").addClass("hide").attr("aria-hidden", "true");
   }
 
+  /** Red text when the box has text but no customer picked from the list (hidden id empty). */
+  function syncOrderCustomerSearchUnknownClass() {
+    var raw = ($("#order-customer-search").val() || "").trim();
+    var hasId = !!String($("#order-customer-id").val() || "").trim();
+    $("#order-customer-search").toggleClass("oc-customer-search--unknown", raw.length > 0 && !hasId);
+  }
+
   /** Build HTML for prescription lines (type + notes; omits secret_notes). */
   function renderPrescriptionLinesForOrder(lines) {
     if (!lines || !lines.length) {
@@ -301,6 +346,7 @@
       $search.val("");
     }
     $("#order-customer-dd").empty().addClass("hide").attr("aria-hidden", "true");
+    syncOrderCustomerSearchUnknownClass();
   }
 
   function productLabelFromProduct(p) {
@@ -324,6 +370,13 @@
     return productTabsOnHand(p) <= 0;
   }
 
+  /** Word used in stock messages instead of hard-coded “tabs” — from product type label when present. */
+  function productStockUnitLabel(p) {
+    if (!p) return "tabs";
+    var lab = p.product_type_label != null ? String(p.product_type_label).trim() : "";
+    return lab || "tabs";
+  }
+
   /**
    * Max tablets sellable vs stock, or null if units/strip unset (UI cannot interpret tab qty vs pricing).
    */
@@ -336,11 +389,12 @@
 
   function productInStockLineLabel(p) {
     if (!p) return "";
-    if (isProductOutOfStock(p)) return "Out of stock (0 tabs in lots)";
+    var unit = productStockUnitLabel(p);
+    if (isProductOutOfStock(p)) return "Out of stock (0 " + unit + " in lots)";
     var tabs = productTabsOnHand(p);
     var ups = p.units_per_strip != null && p.units_per_strip !== "" ? Number(p.units_per_strip) : NaN;
     if (ups > 0 && !isNaN(ups)) {
-      return tabs + " tabs available (all lots)";
+      return tabs + " " + unit + " available (all lots)";
     }
     return tabs + " units on hand (set units/strip on product for tab pricing)";
   }
@@ -352,6 +406,7 @@
     var qty = parseInt($qty.val(), 10);
     var maxTabs = productTabsAvailable(p);
     var over = maxTabs !== null && !isNaN(qty) && qty > maxTabs;
+    var unitWord = productStockUnitLabel(p);
     if (over) {
       $tabsStock
         .removeClass("ol-tabs-stock--empty")
@@ -363,7 +418,7 @@
         $("<span></span>")
           .addClass("ol-tabs-stock-warn")
           .text(
-            "Warning: quantity exceeds available stock (max " + maxTabs + " tabs)."
+            "Warning: quantity exceeds available stock (max " + maxTabs + " " + unitWord + ")."
           )
       );
       $qty.addClass("ol-tabs--over");
@@ -390,7 +445,7 @@
         $tabsStock
           .removeClass("ol-tabs-stock--over")
           .empty()
-          .text("Select a product to see tabs available in lots")
+          .text("Select a product to see quantity available in lots")
           .removeClass("ol-tabs-stock--oos")
           .addClass("ol-tabs-stock--empty")
           .attr("aria-hidden", "false");
@@ -546,7 +601,7 @@
               .addClass("ol-tabs-stock ol-tabs-stock--empty")
               .attr("aria-live", "polite")
               .attr("aria-hidden", "false")
-              .text("Select a product to see tabs available in lots")
+              .text("Select a product to see quantity available in lots")
           ),
         $("<td></td>").append(
           $("<input>")
@@ -656,7 +711,7 @@
   function applyReadonlyUI() {
     var ro = readOnly;
     $("#panel-order-editor").toggleClass("inv-readonly", ro);
-    $("#order-customer-search, #order-customer-id, #order-date, #order-discount-inr, #order-notes").prop(
+    $("#order-customer-search, #order-customer-id, #order-date, #order-discount-flat-inr, #order-discount-pct, #order-notes").prop(
       "disabled",
       ro
     );
@@ -674,7 +729,8 @@
     $("#order-editor-id").val("");
     $("#order-date").val(todayIsoDate());
     setOrderNumberDisplay(null);
-    $("#order-discount-inr").val("");
+    $("#order-discount-flat-inr").val("");
+    $("#order-discount-pct").val("");
     $("#order-notes").val("");
     clearLines();
     appendLineRow();
@@ -695,7 +751,7 @@
 
   function updateTotalsDisplay() {
     var sub = computeLinesSubtotalPaise();
-    var disc = rupeesToPaise($("#order-discount-inr").val());
+    var disc = computeHeaderDiscountPaiseFromInputs(sub);
     var grand = Math.max(0, sub - disc);
     $("#order-sum-lines").text(formatInr(sub));
     $("#order-sum-discount").text(formatInr(disc));
@@ -765,15 +821,17 @@
       M.toast({ html: "Add at least one line with a product." });
       return;
     }
-    var header = {
-      customer_id: Number($("#order-customer-id").val()),
-      order_date: $("#order-date").val() || todayIsoDate(),
-      order_number: null,
-      order_discount_paise: rupeesToPaise($("#order-discount-inr").val()),
-      notes: $("#order-notes").val() || null,
-      status: "draft",
-      prescription_id: linkedPrescriptionId || null,
-    };
+    var header = Object.assign(
+      {
+        customer_id: Number($("#order-customer-id").val()),
+        order_date: $("#order-date").val() || todayIsoDate(),
+        order_number: null,
+        notes: $("#order-notes").val() || null,
+        status: "draft",
+        prescription_id: linkedPrescriptionId || null,
+      },
+      collectHeaderDiscountForSave()
+    );
     var p = editingOrderId
       ? db.updateOrderWithLines(editingOrderId, header, filtered)
       : db.insertOrderWithLines(header, filtered);
@@ -923,7 +981,7 @@
     resetEditor();
     $("#order-editor-title").text("New order");
     $("#order-editor-sub").text(
-      "Draft — line totals from tabs × latest strip price; header discount applies after line subtotal."
+      "Draft — line totals from quantity × latest strip price; header discount applies after line subtotal."
     );
     showEditorPanel();
     M.updateTextFields();
@@ -949,7 +1007,19 @@
     );
     $("#order-date").val(o.order_date || "");
     setOrderNumberDisplay(o);
-    $("#order-discount-inr").val(paiseToRupees(o.order_discount_paise || 0).toFixed(2));
+    var pct = o.order_header_discount_percent;
+    if (pct != null && Number(pct) > 0) {
+      $("#order-discount-pct").val(String(Math.min(50, Math.max(0, Math.round(Number(pct))))));
+      $("#order-discount-flat-inr").val("");
+    } else {
+      $("#order-discount-pct").val("");
+      var fp = o.order_header_discount_flat_paise;
+      if (fp != null && fp !== undefined && !isNaN(Number(fp))) {
+        $("#order-discount-flat-inr").val(paiseToRupees(Number(fp)).toFixed(2));
+      } else {
+        $("#order-discount-flat-inr").val(paiseToRupees(o.order_discount_paise || 0).toFixed(2));
+      }
+    }
     $("#order-notes").val(o.notes || "");
     refreshCustomerSelect(o.customer_id);
     clearLines();
@@ -1011,6 +1081,15 @@
         $("#order-date").val(todayIsoDate());
 
         $("#btn-new-order").on("click", openNewOrder);
+        $("#btn-order-csv-export").on("click", function () {
+          var C = window.MargInventoryCsv;
+          if (!C || !C.exportOrdersCsv) {
+            M.toast({ html: "Export not available." });
+            return;
+          }
+          C.exportOrdersCsv(db);
+          M.toast({ html: "CSV downloaded." });
+        });
         $("#btn-back-to-list").on("click", showListPanel);
         $("#btn-print-invoice").on("click", function () {
           if (!editingOrderId) return;
@@ -1029,15 +1108,17 @@
               M.toast({ html: "Add at least one line with a product." });
               return;
             }
-            var header = {
-              customer_id: Number($("#order-customer-id").val()),
-              order_date: $("#order-date").val() || todayIsoDate(),
-              order_number: null,
-              order_discount_paise: rupeesToPaise($("#order-discount-inr").val()),
-              notes: $("#order-notes").val() || null,
-              status: "draft",
-              prescription_id: linkedPrescriptionId || null,
-            };
+            var header = Object.assign(
+              {
+                customer_id: Number($("#order-customer-id").val()),
+                order_date: $("#order-date").val() || todayIsoDate(),
+                order_number: null,
+                notes: $("#order-notes").val() || null,
+                status: "draft",
+                prescription_id: linkedPrescriptionId || null,
+              },
+              collectHeaderDiscountForSave()
+            );
             db
               .insertOrderWithLines(header, lines)
               .then(function (nid) {
@@ -1097,6 +1178,7 @@
           var $dd = $("#order-customer-dd");
           fillCustomerDropdown($dd, $(this).val());
           $dd.removeClass("hide").attr("aria-hidden", "false");
+          syncOrderCustomerSearchUnknownClass();
         });
 
         $("#panel-order-editor").on("mousedown", ".oc-customer-li:not(.oc-customer-li--empty)", function (e) {
@@ -1112,6 +1194,7 @@
           $("#order-customer-id").val(id || "");
           $("#order-customer-search").val(lab);
           $("#order-customer-dd").addClass("hide").attr("aria-hidden", "true");
+          syncOrderCustomerSearchUnknownClass();
         });
 
         $("#btn-order-unlink-rx").on("click", function () {
@@ -1170,7 +1253,25 @@
           recalcLineRow($tr);
         });
 
-        $("#order-discount-inr").on("change keyup", updateTotalsDisplay);
+        $("#order-discount-flat-inr").on("input change keyup", function () {
+          if (headerDiscountFlatHasValue()) $("#order-discount-pct").val("");
+          updateTotalsDisplay();
+        });
+        $("#order-discount-pct").on("input change keyup", function () {
+          if (headerDiscountPctHasValue()) $("#order-discount-flat-inr").val("");
+          updateTotalsDisplay();
+        });
+        $("#order-discount-pct").on("blur", function () {
+          var v = $(this).val();
+          if (v === "" || v == null) return;
+          var n = Number(v);
+          if (isNaN(n)) {
+            $(this).val("");
+            return;
+          }
+          n = Math.min(50, Math.max(0, Math.round(n)));
+          $(this).val(n > 0 ? String(n) : "");
+        });
 
         $("#order-table-body").on("click", ".print-order", function (e) {
           e.preventDefault();
@@ -1209,7 +1310,9 @@
         });
 
         $("#btn-quick-customer").on("click", function () {
+          var typed = ($("#order-customer-search").val() || "").trim();
           $("#form-order-customer")[0].reset();
+          $("#ocf-name").val(typed);
           M.updateTextFields();
           $("#modal-order-customer").modal("open");
         });

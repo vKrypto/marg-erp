@@ -63,13 +63,24 @@
                   Quick add patient
                 </button>
               </div>
-              <div class="input-field col s12 m6">
-                <input id="rx-doctor-name" type="text" autocomplete="off" />
-                <label for="rx-doctor-name">Doctor name</label>
-              </div>
-              <div class="input-field col s12 m6">
-                <input id="rx-doctor-phone" type="tel" autocomplete="off" />
-                <label for="rx-doctor-phone">Doctor phone</label>
+              <div class="col s12">
+                <span class="inv-order-field-label" id="lbl-rx-doctor">Doctor</span>
+                <div id="rx-doctor-wrap" class="oc-customer-wrap inv-customer-combo">
+                  <input
+                    type="search"
+                    id="rx-doctor-search"
+                    class="browser-default oc-customer-search"
+                    placeholder="Search by name or phone…"
+                    autocomplete="off"
+                    aria-labelledby="lbl-rx-doctor"
+                  />
+                  <input type="hidden" id="rx-doctor-id" value="" />
+                  <ul id="rx-doctor-dd" class="oc-customer-dd hide browser-default" aria-hidden="true"></ul>
+                </div>
+                <button type="button" id="btn-rx-quick-doctor" class="btn-small waves-effect teal lighten-2" style="margin-top: 10px">
+                  <i class="material-icons left" aria-hidden="true">person_add</i>
+                  Quick add doctor
+                </button>
               </div>
             </div>
             <h5 class="inv-rx-lines-heading">Lines</h5>
@@ -105,6 +116,29 @@
             <div class="input-field col s12">
               <input id="rxf-phone" type="tel" required autocomplete="tel" />
               <label for="rxf-phone">Phone *</label>
+            </div>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="modal-close btn-flat grey-text">Cancel</button>
+          <button type="submit" class="btn waves-effect waves-light teal darken-1">Save &amp; select</button>
+        </div>
+      </form>
+    </div>
+
+    <div id="modal-rx-doctor" class="modal modal-fixed-footer">
+      <form id="form-rx-doctor">
+        <div class="modal-content">
+          <h4>Add doctor</h4>
+          <p class="grey-text" style="margin-top: 0">Enter name and optional phone. A new doctor record is created and selected.</p>
+          <div class="row" style="margin-bottom: 0">
+            <div class="input-field col s12">
+              <input id="rxfd-name" type="text" required autocomplete="name" />
+              <label for="rxfd-name">Doctor name *</label>
+            </div>
+            <div class="input-field col s12">
+              <input id="rxfd-phone" type="tel" autocomplete="tel" />
+              <label for="rxfd-phone">Phone</label>
             </div>
           </div>
         </div>

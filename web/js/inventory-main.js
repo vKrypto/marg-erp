@@ -40,11 +40,8 @@
     return "—";
   }
 
-  /** Total tablets in one pack: strips per pack × tabs per strip. */
-  function formatTabsPerPack(r) {
-    var s = Number(r.strips_per_pack);
-    var u = Number(r.units_per_strip);
-    if (s > 0 && u > 0 && !isNaN(s) && !isNaN(u)) return String(Math.round(s * u));
+  /** Tablets per physical pack — defined per purchase lot (not on product row). */
+  function formatTabsPerPack(/* r */) {
     return "—";
   }
 
@@ -366,6 +363,41 @@
                           ? "vendor"
                           : "lot";
                     var msg = "Imported " + n + " " + label + (n === 1 ? "" : "s");
+                    if (
+                      typeof result.inserted === "number" &&
+                      typeof result.updated === "number" &&
+                      (result.inserted > 0 || result.updated > 0)
+                    ) {
+                      if (section === "products") {
+                        msg =
+                          "Products: " +
+                          result.inserted +
+                          " added" +
+                          (result.updated ? ", " + result.updated + " updated" : "") +
+                          " (matched by code)";
+                      } else if (section === "vendors") {
+                        msg =
+                          "Vendors: " +
+                          result.inserted +
+                          " added" +
+                          (result.updated ? ", " + result.updated + " updated" : "") +
+                          " (matched by name)";
+                      } else if (section === "customers") {
+                        msg =
+                          "Customers: " +
+                          result.inserted +
+                          " added" +
+                          (result.updated ? ", " + result.updated + " updated" : "") +
+                          " (matched by phone or name)";
+                      } else if (section === "lots") {
+                        msg =
+                          "Lots: " +
+                          result.inserted +
+                          " added" +
+                          (result.updated ? ", " + result.updated + " updated" : "") +
+                          " (matched by lot #)";
+                      }
+                    }
                     if (errs.length) {
                       msg += ". " + errs.length + " issue(s).";
                       console.warn("CSV import issues:", errs);
@@ -390,6 +422,20 @@
           });
           bind("vendors", "vendors", C.importVendors, refreshVendorsTable);
           bind("lots", "lots", C.importLots, refreshLotsTable);
+
+          function wireExport(btnSel, fnName) {
+            $(btnSel).on("click", function () {
+              if (!C[fnName]) {
+                M.toast({ html: "Export not available." });
+                return;
+              }
+              C[fnName](db);
+              M.toast({ html: "CSV downloaded." });
+            });
+          }
+          wireExport("#btn-csv-export-products", "exportProductsCsv");
+          wireExport("#btn-csv-export-vendors", "exportVendorsCsv");
+          wireExport("#btn-csv-export-lots", "exportLotsCsv");
         })();
 
         function showInventoryPanel(panel) {

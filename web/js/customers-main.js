@@ -113,6 +113,15 @@
             $("#customer-csv-file").trigger("click");
           });
 
+          $("#btn-customer-csv-export").on("click", function () {
+            if (!C.exportCustomersCsv) {
+              M.toast({ html: "Export not available." });
+              return;
+            }
+            C.exportCustomersCsv(db);
+            M.toast({ html: "CSV downloaded." });
+          });
+
           $("#customer-csv-file").on("change", function (e) {
             var input = e.target;
             var f = input.files && input.files[0];

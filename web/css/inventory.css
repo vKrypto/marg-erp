@@ -1023,6 +1023,36 @@ a.inv-table-text-link:focus {
   margin: 0.35rem 0 0 !important;
 }
 
+.inv-ie-csv-section {
+  margin: 1.25rem 0 0;
+  padding: 1rem 0 0;
+  border-top: 1px solid var(--inv-border);
+}
+
+.inv-ie-csv-heading {
+  margin: 0;
+  font-size: 1.15rem;
+  font-weight: 700;
+  color: #212121;
+}
+
+.inv-ie-csv-intro {
+  margin: 0.45rem 0 0.85rem;
+  font-size: 0.92rem;
+  line-height: 1.45;
+}
+
+.inv-ie-csv-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.inv-ie-csv-actions .btn .material-icons.left {
+  margin-right: 6px;
+}
+
 .inv-ie-full-replace {
   display: block;
   width: 100%;
@@ -2251,6 +2281,20 @@ a.inv-nav-item.inv-nav-wide {
   }
 }
 
+.inv-order-form .inv-order-meta-discount-pair {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.75rem;
+  align-items: start;
+  min-width: 0;
+}
+
+@media only screen and (max-width: 600px) {
+  .inv-order-form .inv-order-meta-discount-pair {
+    grid-template-columns: 1fr;
+  }
+}
+
 .inv-order-form .inv-order-meta-block {
   display: flex;
   flex-direction: column;
@@ -2286,6 +2330,10 @@ a.inv-nav-item.inv-nav-wide {
   outline: none;
   border-color: var(--inv-teal);
   box-shadow: 0 0 0 2px rgba(38, 166, 154, 0.2);
+}
+
+.inv-order-discount-input--pct {
+  max-width: 8rem;
 }
 
 /* Space between order notes (Materialize) and line items */
@@ -2568,6 +2616,10 @@ a.inv-nav-item.inv-nav-wide {
   border-color: #26a69a;
   outline: none;
   box-shadow: 0 0 0 2px rgba(38, 166, 154, 0.2);
+}
+
+.oc-customer-search.oc-customer-search--unknown {
+  color: #c62828;
 }
 
 .oc-customer-dd {

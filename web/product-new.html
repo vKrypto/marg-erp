@@ -25,7 +25,7 @@
             <div class="inv-panel-head-text">
               <h1 class="inv-panel-title" id="pn-page-title">Add product</h1>
               <p class="inv-panel-subtitle" id="pn-page-sub">
-                Medicine master data — pack structure and optional clinical notes.
+                Medicine master data — units per strip and optional clinical notes. Strips per pack are set on each purchase lot.
               </p>
             </div>
             <a href="inventory.html?panel=products" class="btn-flat inv-link-btn waves-effect" id="pn-back"
@@ -61,15 +61,11 @@
                 <input id="pn-barcode" type="text" />
                 <label for="pn-barcode">Barcode</label>
               </div>
-              <div class="input-field col s12 m4">
+              <div class="input-field col s12 m6">
                 <input id="pn-pack-label" type="text" placeholder="e.g. 1*15" />
                 <label for="pn-pack-label">Pack label</label>
               </div>
-              <div class="input-field col s12 m4">
-                <input id="pn-strips" type="number" min="1" value="1" />
-                <label for="pn-strips">Strips per pack</label>
-              </div>
-              <div class="input-field col s12 m4">
+              <div class="input-field col s12 m6">
                 <input id="pn-units" type="number" min="1" />
                 <label for="pn-units">Units per strip</label>
               </div>

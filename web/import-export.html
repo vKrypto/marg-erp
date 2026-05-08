@@ -50,6 +50,33 @@
             </div>
           </header>
 
+          <div class="inv-ie-csv-section">
+            <h2 class="inv-ie-csv-heading">CSV export by section</h2>
+            <p class="inv-ie-csv-intro grey-text text-darken-2">
+              Download one CSV per area — same columns as each screen’s import / sample file (lighter than the full Excel export above).
+            </p>
+            <div class="inv-ie-csv-actions">
+              <button type="button" id="btn-ie-csv-products" class="btn inv-btn-outline waves-effect">
+                <i class="material-icons left">download</i>Products
+              </button>
+              <button type="button" id="btn-ie-csv-vendors" class="btn inv-btn-outline waves-effect">
+                <i class="material-icons left">download</i>Vendors
+              </button>
+              <button type="button" id="btn-ie-csv-customers" class="btn inv-btn-outline waves-effect">
+                <i class="material-icons left">download</i>Customers
+              </button>
+              <button type="button" id="btn-ie-csv-lots" class="btn inv-btn-outline waves-effect">
+                <i class="material-icons left">download</i>Lots
+              </button>
+              <button type="button" id="btn-ie-csv-orders" class="btn inv-btn-outline waves-effect">
+                <i class="material-icons left">download</i>Orders
+              </button>
+              <button type="button" id="btn-ie-csv-prescriptions" class="btn inv-btn-outline waves-effect">
+                <i class="material-icons left">download</i>Prescriptions
+              </button>
+            </div>
+          </div>
+
           <div class="inv-ie-full-replace">
             <label class="inv-ie-full-replace-label" for="inv-import-full-replace">
               <input type="checkbox" id="inv-import-full-replace" class="inv-ie-full-replace-input" />
@@ -188,6 +215,7 @@
     <script src="vendor/js/materialize.min.js"></script>
     <script src="vendor/js/sql-wasm.js"></script>
     <script src="js/db.js"></script>
+    <script src="js/inventory-csv.js"></script>
     <script src="vendor/js/xlsx.full.min.js"></script>
     <script src="js/inventory-excel.js"></script>
     <script src="js/views/app-layout-view.js"></script>
