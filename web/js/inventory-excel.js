@@ -836,19 +836,7 @@
       stats.errors = stats.errors.concat(res.errors || []);
     });
 
-    chain = chain.then(function () {
-      var ord = data.orders || [];
-      var ol = data.orderLines || [];
-      if (!ord.length) {
-        return { count: 0, errors: [] };
-      }
-      return importOrdersFromSheets(db, ord, ol);
-    });
-    chain = chain.then(function (res) {
-      stats.orders = res.count;
-      stats.errors = stats.errors.concat(res.errors || []);
-    });
-
+    /** Lots before orders: workbook restore must load on-hand stock before any path that deducts for confirmed orders. */
     chain = chain.then(function () {
       if (!data.lots.length) return Promise.resolve();
       var vendorMap = buildVendorNameMap(db);
@@ -956,6 +944,19 @@
             });
         });
       }, Promise.resolve());
+    });
+
+    chain = chain.then(function () {
+      var ord = data.orders || [];
+      var ol = data.orderLines || [];
+      if (!ord.length) {
+        return { count: 0, errors: [] };
+      }
+      return importOrdersFromSheets(db, ord, ol);
+    });
+    chain = chain.then(function (res) {
+      stats.orders = res.count;
+      stats.errors = stats.errors.concat(res.errors || []);
     });
 
     chain = chain.then(function () {

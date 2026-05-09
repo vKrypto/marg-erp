@@ -2,7 +2,7 @@
  * Marg ERP — offline cache: app shell, static assets, local fonts (Roboto + Material Icons).
  * Bump CACHE_NAME when precache list changes materially.
  */
-const CACHE_NAME = "marg-erp-offline-v36";
+const CACHE_NAME = "marg-erp-offline-v38";
 
 const PRECACHE = [
   "manifest.json",

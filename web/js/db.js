@@ -860,6 +860,37 @@
     };
   }
 
+  /** Next ORD-###### for entity: max numeric suffix among ORD-* digit rows + 1, then skip until unused. */
+  function allocateNextShopOrderNumber(db, entityId) {
+    var eid = Number(entityId);
+    var rows = execAll(
+      db,
+      "SELECT order_number FROM shop_order WHERE entity_id = ? AND order_number IS NOT NULL AND TRIM(order_number) != ''",
+      [eid]
+    );
+    var maxN = 0;
+    var ordRe = /^ORD-(\d+)$/i;
+    for (var i = 0; i < rows.length; i++) {
+      var raw = rows[i].order_number != null ? String(rows[i].order_number).trim() : "";
+      if (!raw) continue;
+      var m = raw.match(ordRe);
+      if (!m) continue;
+      var n = parseInt(m[1], 10);
+      if (!isNaN(n) && n > maxN) maxN = n;
+    }
+    var candidate = maxN + 1;
+    for (;;) {
+      var label = "ORD-" + String(candidate).padStart(6, "0");
+      var chk = execAll(
+        db,
+        "SELECT 1 AS x FROM shop_order WHERE entity_id = ? AND order_number = ? LIMIT 1",
+        [eid, label]
+      );
+      if (!chk.length) return label;
+      candidate++;
+    }
+  }
+
   /**
    * Keep available_count (full strips notionally on hand) aligned with tablet-level available_tabs.
    */
@@ -3470,7 +3501,7 @@
   };
 
   /**
-   * @param {object} header — customer_id, order_date, order_number? (omit for UI; DB assigns ORD-000001), order_discount_paise, notes?, status?
+   * @param {object} header — customer_id, order_date, order_number? (omit for UI; DB assigns next ORD-###### after max existing), order_discount_paise, notes?, status? (confirmed/cancelled stored as-is; lot deduction runs only via setOrderStatus draft→confirmed)
    * @param {Array<{product_id:number,quantity:number,total_price_paise:number,line_discount_paise?:number,line_notes?:string,schedule?:object}>} lines
    * @returns {Promise<number>} new order id
    */
@@ -3496,7 +3527,7 @@
     var flatStored = hdrDisc.flat_paise;
     var percentStored = hdrDisc.percent;
     var orderTotal = Math.max(0, lineSum - discount);
-    /** Explicit number (e.g. Excel import); otherwise assigned after insert as ORD- + zero-padded id. */
+    /** Explicit number (e.g. Excel import); otherwise assigned inside txn as next ORD-###### (max suffix + 1, gap-safe). */
     var orderNum =
       header.order_number && String(header.order_number).trim() ? String(header.order_number).trim() : null;
     var status = header.status && ["draft", "confirmed", "cancelled"].indexOf(header.status) >= 0
@@ -3523,6 +3554,9 @@
     var orderId;
     try {
       this._db.run("BEGIN TRANSACTION");
+      if (orderNum == null) {
+        orderNum = allocateNextShopOrderNumber(this._db, eid);
+      }
       this._db.run(
         [
           "INSERT INTO shop_order (entity_id, customer_id, order_number, order_date, order_total_price_paise, order_discount_paise, order_header_discount_flat_paise, order_header_discount_percent, status, notes, prescription_id, created_at, updated_at)",
@@ -3546,12 +3580,6 @@
       );
       var oidRow = this._db.exec("SELECT last_insert_rowid() AS id");
       orderId = oidRow[0].values[0][0];
-      if (orderNum == null) {
-        this._db.run("UPDATE shop_order SET order_number = 'ORD-' || printf('%06d', id) WHERE id = ? AND entity_id = ?", [
-          orderId,
-          eid,
-        ]);
-      }
       for (var j = 0; j < lines.length; j++) {
         var L = lines[j];
         this._db.run(
@@ -3588,9 +3616,7 @@
           ]
         );
       }
-      if (status === "confirmed") {
-        applyConfirmedOrderToInventory(this._db, eid, orderId);
-      }
+      /** Stock is adjusted only in {@link MargDb#setOrderStatus} (draft → confirmed), not here — avoids double-deduct on Excel import of already-confirmed orders. */
       this._db.run("COMMIT");
     } catch (err) {
       try {

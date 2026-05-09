@@ -370,6 +370,11 @@
     return productTabsOnHand(p) <= 0;
   }
 
+  /** Confirmed orders already deducted stock — line qty is historical; do not flag vs current availability. */
+  function skipStockAvailabilityUi() {
+    return currentOrderStatus === "confirmed";
+  }
+
   /** Word used in stock messages instead of hard-coded “tabs” — from product type label when present. */
   function productStockUnitLabel(p) {
     if (!p) return "tabs";
@@ -405,7 +410,8 @@
     $tabsStock.removeClass("ol-tabs-stock--over").empty();
     var qty = parseInt($qty.val(), 10);
     var maxTabs = productTabsAvailable(p);
-    var over = maxTabs !== null && !isNaN(qty) && qty > maxTabs;
+    var over =
+      !skipStockAvailabilityUi() && maxTabs !== null && !isNaN(qty) && qty > maxTabs;
     var unitWord = productStockUnitLabel(p);
     if (over) {
       $tabsStock
@@ -471,7 +477,7 @@
       }
       return;
     }
-    var oos = isProductOutOfStock(p);
+    var oos = skipStockAvailabilityUi() ? false : isProductOutOfStock(p);
     var lab = productInStockLineLabel(p);
     if ($hint.length) {
       $hint
